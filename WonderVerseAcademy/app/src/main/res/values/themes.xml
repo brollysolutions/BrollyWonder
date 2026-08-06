@@ -1,0 +1,5 @@
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <style name="Theme.WonderVerse" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+        <item name="android:windowOptInEdgeToEdge" tools:targetApi="35">true</item>
+    </style>
+</resources>

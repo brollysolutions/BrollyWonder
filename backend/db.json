@@ -1,0 +1,33 @@
+{
+  "player": {
+    "name": "Charan",
+    "avatarEmoji": "🦁",
+    "coins": 1615,
+    "xp": 240,
+    "xpToNextLevel": 300,
+    "level": 3,
+    "streakDays": 1,
+    "stars": 248,
+    "petName": "Glimmer",
+    "petHappiness": 100,
+    "petHunger": 76,
+    "petEmoji": "🐉",
+    "inventory": [
+      "hat_bow",
+      "hat_tophat",
+      "hat_shades"
+    ],
+    "equipped": {
+      "hat": "hat_shades"
+    },
+    "kingdomProgress": {
+      "word_forest": 65,
+      "math_castle": 40,
+      "space_science": 20,
+      "ocean_kingdom": 0,
+      "history_kingdom": 0,
+      "creative_village": 0
+    },
+    "completedChapters": []
+  }
+}

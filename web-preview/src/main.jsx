@@ -6714,14 +6714,14 @@ function DeepSeaDiverGame({ player, onBack, onComplete }) {
       state.status = 'gameover';
     }
 
-    if (now - state.lastSpawn > 2000 - Math.min((state.level - 1) * 150 + state.score * 50, 1000)) {
+    if (now - state.lastSpawn > 2200 - Math.min((state.level - 1) * 100 + state.score * 30, 800)) {
       const isShark = state.level >= 4 && Math.random() > 0.7;
       if (isShark) {
         state.obstacles.push({
           id: now, type: 'shark', x: 100, y: 15 + Math.random() * 70, passed: false
         });
       } else {
-        const gapSize = Math.max(15, 35 - ((state.level - 1) * 3 + state.score * 1.5));
+        const gapSize = Math.max(25, 45 - ((state.level - 1) * 2 + state.score * 1.0));
         const gapTop = 15 + Math.random() * (100 - 30 - gapSize);
         state.obstacles.push({
           id: now, type: 'coral', x: 100, gapTop, gapSize, passed: false
@@ -6731,7 +6731,7 @@ function DeepSeaDiverGame({ player, onBack, onComplete }) {
     }
 
     state.obstacles.forEach(obs => {
-      obs.x -= 0.6 + ((state.level - 1) * 0.1) + (state.score * 0.02);
+      obs.x -= 0.4 + ((state.level - 1) * 0.05) + (state.score * 0.01);
 
       if (obs.type === 'shark') {
         if (obs.x < 30 && obs.x > 10) {

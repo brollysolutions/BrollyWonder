@@ -6917,67 +6917,95 @@ function DeepSeaDiverGame({ player, onBack, onComplete }) {
 
 const WORD_FOREST_LEVEL_POOLS = [
   {
-    name: 'Level 1 • CVC Words',
+    name: 'Level 1 • CVC Phonics Masters',
+    targetWords: ['CAT', 'DOG', 'SUN', 'FOX', 'BUS', 'PEN', 'HAT', 'MAP'],
     gems: [
       { type: '🐱', word: 'CAT' },
       { type: '🐶', word: 'DOG' },
       { type: '☀️', word: 'SUN' },
       { type: '🖊️', word: 'PEN' },
       { type: '🦊', word: 'FOX' },
-      { type: '🚌', word: 'BUS' }
+      { type: '🚌', word: 'BUS' },
+      { type: '🧢', word: 'HAT' },
+      { type: '🗺️', word: 'MAP' }
     ],
     obstacles: [
-      { type: '🧢', word: 'CAP' },
       { type: '📦', word: 'BOX' },
-      { type: '🥤', word: 'CUP' }
+      { type: '🥤', word: 'CUP' },
+      { type: '🕳️', label: 'PIT HOLE' }
     ]
   },
   {
-    name: 'Level 2 • Nature & Food',
+    name: 'Level 2 • Jungle Wildlife & Nature',
+    targetWords: ['TREE', 'LEAF', 'FROG', 'BIRD', 'BEAR', 'LION', 'DEER', 'FISH'],
     gems: [
       { type: '🍎', word: 'APPLE' },
       { type: '🌳', word: 'TREE' },
       { type: '🍃', word: 'LEAF' },
       { type: '🐟', word: 'FISH' },
       { type: '🐸', word: 'FROG' },
-      { type: '🐦', word: 'BIRD' }
+      { type: '🐦', word: 'BIRD' },
+      { type: '🦌', word: 'DEER' },
+      { type: '🐻', word: 'BEAR' }
     ],
     obstacles: [
       { type: '🌿', word: 'BUSH' },
       { type: '🍄', word: 'SHROOM' },
-      { type: '🍇', word: 'GRAPE' }
-    ]
-  },
-  {
-    name: 'Level 3 • Wild Safari',
-    gems: [
-      { type: '🐻', word: 'BEAR' },
-      { type: '🦁', word: 'LION' },
-      { type: '🐵', word: 'MONKEY' },
-      { type: '🦓', word: 'ZEBRA' },
-      { type: '🐘', word: 'ELEPHANT' },
-      { type: '🦒', word: 'GIRAFFE' }
-    ],
-    obstacles: [
-      { type: '🪵', word: 'LOG' },
-      { type: '🐍', word: 'SNAKE' },
       { type: '🐊', word: 'CROC' }
     ]
   },
   {
-    name: 'Level 4 • Star Master',
+    name: 'Level 3 • Action & Adventure Verbs',
+    targetWords: ['JUMP', 'LEAP', 'DASH', 'SOAR', 'SWIM', 'ROAR', 'FAST', 'HERO'],
+    gems: [
+      { type: '🦘', word: 'JUMP' },
+      { type: '🦅', word: 'SOAR' },
+      { type: '⚡', word: 'DASH' },
+      { type: '🏊‍♂️', word: 'SWIM' },
+      { type: '🦁', word: 'ROAR' },
+      { type: '🏃‍♂️', word: 'FAST' },
+      { type: '🦸', word: 'HERO' },
+      { type: '🌟', word: 'LEAP' }
+    ],
+    obstacles: [
+      { type: '🪵', word: 'LOG' },
+      { type: '🐍', word: 'SNAKE' },
+      { type: '🌋', word: 'LAVA' }
+    ]
+  },
+  {
+    name: 'Level 4 • Star & Magic Vocabulary',
+    targetWords: ['STAR', 'MOON', 'CROWN', 'PEARL', 'FLOWER', 'SHIELD', 'BRAVE', 'ROYAL'],
     gems: [
       { type: '⭐', word: 'STAR' },
       { type: '🌙', word: 'MOON' },
       { type: '🌸', word: 'FLOWER' },
       { type: '🌈', word: 'RAINBOW' },
       { type: '🦋', word: 'BUTTERFLY' },
-      { type: '👑', word: 'CROWN' }
+      { type: '👑', word: 'CROWN' },
+      { type: '🛡️', word: 'SHIELD' },
+      { type: '🔮', word: 'MAGIC' }
     ],
     obstacles: [
       { type: '💎', word: 'GEM' },
       { type: '⚡', word: 'BOLT' },
-      { type: '🔮', word: 'ORB' }
+      { type: '🦇', label: 'GIANT BAT' }
+    ]
+  },
+  {
+    name: 'Level 5 • Legendary Kingdom Phonics',
+    targetWords: ['DRAGON', 'PHOENIX', 'CRYSTAL', 'THUNDER', 'VICTORY', 'KINGDOM'],
+    gems: [
+      { type: '🐉', word: 'DRAGON' },
+      { type: '🦅', word: 'PHOENIX' },
+      { type: '💎', word: 'CRYSTAL' },
+      { type: '⚡', word: 'THUNDER' },
+      { type: '🏆', word: 'VICTORY' },
+      { type: '🏰', word: 'KINGDOM' }
+    ],
+    obstacles: [
+      { type: '🔥', word: 'FIRE' },
+      { type: '☄️', word: 'METEOR' }
     ]
   }
 ];
@@ -6986,10 +7014,17 @@ function DinoJumperGame({ player, onBack, onComplete, isWordForest = true }) {
   const [renderTick, setRenderTick] = React.useState(0);
   const gameState = React.useRef({
     status: 'intro', score: 0, level: 1, lives: 3, y: 0, velocity: 0,
-    obstacles: [], gems: [], lastSpawn: Date.now(), gravity: -0.55, jumpForce: 8.5,
-    combo: 0, wordsLearned: [], popups: [], bgOffset: 0
+    obstacles: [], gems: [], powerups: [], particles: [], lastSpawn: Date.now(), gravity: -0.45, jumpForce: 5.6,
+    combo: 0, wordsLearned: [], popups: [], bgOffset: 0, canDoubleJump: false, isDoubleJumping: false,
+    hasShield: false, magnetUntil: 0, doubleScoreUntil: 0,
+    targetIdx: 0, targetWord: 'CAT'
   });
   const requestRef = React.useRef();
+
+  const getLevelPool = (lvl) => {
+    const idx = Math.min(WORD_FOREST_LEVEL_POOLS.length - 1, Math.max(0, (lvl || 1) - 1));
+    return WORD_FOREST_LEVEL_POOLS[idx];
+  };
 
   const updateGame = () => {
     if (gameState.current.status !== 'playing') {
@@ -7003,9 +7038,8 @@ function DinoJumperGame({ player, onBack, onComplete, isWordForest = true }) {
 
     // Apply gravity & physics
     if (state.isFallingInHole) {
-      state.y -= 4.2; // Fall down into pit hole below screen
+      state.y -= 4.2;
       if (state.y < -70) {
-        // Spring back UP onto safe ground platform ("again up")
         state.y = 0;
         state.velocity = 0;
         state.isFallingInHole = false;
@@ -7022,8 +7056,20 @@ function DinoJumperGame({ player, onBack, onComplete, isWordForest = true }) {
       }
     }
 
-    // Spawn obstacles & collectibles
-    const spawnRate = Math.max(700, 1100 - (state.level - 1) * 150);
+    // Magnet Effect: pull gems towards player position (x: 20%, y: state.y)
+    const isMagnetActive = now < state.magnetUntil;
+    if (isMagnetActive) {
+      state.gems.forEach(gem => {
+        if (!gem.collected) {
+          if (gem.x > 20) gem.x -= 1.8;
+          const targetY = (state.y / 10) * 5 + 10;
+          gem.height += (targetY - gem.height) * 0.1;
+        }
+      });
+    }
+
+    // Spawn obstacles, gems & powerups
+    const spawnRate = Math.max(650, 1100 - (state.level - 1) * 140);
     if (now - state.lastSpawn > spawnRate) {
       const isFlyingEnemy = state.level >= 4 && Math.random() > 0.7;
       if (isFlyingEnemy) {
@@ -7031,20 +7077,46 @@ function DinoJumperGame({ player, onBack, onComplete, isWordForest = true }) {
           id: now, x: 105, y: 45 + Math.random() * 15, type: isWordForest ? '🦇' : '🦖', label: isWordForest ? 'GIANT BAT' : 'PTERODACTYL', passed: false, isFlying: true
         });
       } else {
-        const isEgg = (state.obstacles.length < state.gems.length)
-          ? false
-          : (state.gems.length < state.obstacles.length ? true : Math.random() > 0.5);
-        if (isWordForest) {
-          const poolIdx = Math.min(WORD_FOREST_LEVEL_POOLS.length - 1, Math.max(0, (state.level || 1) - 1));
-          const currentPool = WORD_FOREST_LEVEL_POOLS[poolIdx];
-          if (isEgg) {
-            const item = currentPool.gems[Math.floor(Math.random() * currentPool.gems.length)];
+        const pool = getLevelPool(state.level);
+        const spawnRoll = Math.random();
+
+        // 15% Powerup drop chance in Word Forest
+        if (isWordForest && spawnRoll < 0.15) {
+          const powerTypes = [
+            { type: '🍌', name: 'BANANA SHIELD', effect: 'shield' },
+            { type: '🧲', name: 'JUNGLE MAGNET', effect: 'magnet' },
+            { type: '🌟', name: '2X SCORE', effect: 'double' }
+          ];
+          const p = powerTypes[Math.floor(Math.random() * powerTypes.length)];
+          state.gems.push({
+            id: now, x: 105, height: 4 + Math.random() * 5, type: p.type, word: p.name, isPowerup: true, effect: p.effect, collected: false
+          });
+        } else if (spawnRoll < 0.6) {
+          // Gem / Word spawn
+          if (isWordForest) {
+            // Higher chance to spawn target word item!
+            const spawnTarget = Math.random() > 0.4 && pool.gems.some(g => g.word === state.targetWord);
+            let item;
+            if (spawnTarget) {
+              item = pool.gems.find(g => g.word === state.targetWord) || pool.gems[0];
+            } else {
+              item = pool.gems[Math.floor(Math.random() * pool.gems.length)];
+            }
             state.gems.push({
-              id: now, x: 105, height: 2 + Math.random() * 6, type: item.type, word: item.word, collected: false
+              id: now, x: 105, height: 2 + Math.random() * 7, type: item.type, word: item.word, collected: false
             });
           } else {
-            const item = currentPool.obstacles[Math.floor(Math.random() * currentPool.obstacles.length)];
+            state.gems.push({
+              id: now, x: 105, height: 2 + Math.random() * 6, type: Math.random() > 0.5 ? '🥚' : '🦴', collected: false
+            });
+          }
+        } else {
+          // Obstacle spawn
+          if (isWordForest) {
+            const item = pool.obstacles ? pool.obstacles[Math.floor(Math.random() * pool.obstacles.length)] : null;
             const pitTypes = [
+              { type: '🐍', label: 'COBRA STRIKE' },
+              { type: '🐍', label: 'COBRA STRIKE' },
               { type: '🕳️', label: 'PIT HOLE' },
               { type: '🐊', label: 'CROC SWAMP' },
               { type: '🪵', label: 'SPIKE TRAP' },
@@ -7052,14 +7124,7 @@ function DinoJumperGame({ player, onBack, onComplete, isWordForest = true }) {
             ];
             const chosenPit = pitTypes[Math.floor(Math.random() * pitTypes.length)];
             state.obstacles.push({
-              id: now, x: 105, type: chosenPit.type, label: chosenPit.label, word: item ? item.word : chosenPit.label, passed: false
-            });
-          }
-        } else {
-          // History Kingdom: Dino Valley Dash (Classic Prehistoric Items)
-          if (isEgg) {
-            state.gems.push({
-              id: now, x: 105, height: 2 + Math.random() * 6, type: Math.random() > 0.5 ? '🥚' : '🦴', collected: false
+              id: now, x: 105, type: chosenPit.type, label: chosenPit.label, word: item ? item.word : chosenPit.label, passed: false, isStriking: false, warned: false
             });
           } else {
             state.obstacles.push({
@@ -7071,9 +7136,19 @@ function DinoJumperGame({ player, onBack, onComplete, isWordForest = true }) {
       state.lastSpawn = now;
     }
 
-    // Move obstacles & detect collisions (Falling into pit hole)
+    // Move obstacles & collision check
     state.obstacles.forEach(obs => {
       obs.x -= 1.4 + ((state.level - 1) * 0.35);
+
+      // Trigger Cobra lunge strike warning when approaching player (x: 24 to 44)
+      if (isWordForest && (obs.type === '🐍' || obs.label === 'COBRA STRIKE') && !obs.warned && obs.x < 44 && obs.x > 22) {
+        obs.warned = true;
+        obs.isStriking = true;
+        state.popups.push({ id: now, text: '🐍 HISS! COBRA STRIKE! LEAP NOW!', x: obs.x, y: 38, opacity: 1 });
+        try {
+          if (typeof speak === 'function') speak('Watch out! Cobra striking!');
+        } catch (e) { }
+      }
 
       if (obs.isFlying) {
         if (obs.x < 24 && obs.x > 12 && !obs.hit) {
@@ -7081,93 +7156,145 @@ function DinoJumperGame({ player, onBack, onComplete, isWordForest = true }) {
             obs.hit = true;
             if (state.hasShield) {
               state.hasShield = false;
-              state.popups.push({ id: now, text: '🛡️ SHIELD SAVED YOU!', x: 20, y: 30, opacity: 1 });
+              state.popups.push({ id: now, text: '🛡️ BANANA SHIELD SAVED YOU!', x: 20, y: 30, opacity: 1 });
+              try { if (typeof speak === 'function') speak('Banana Shield Saved Tarzan!'); } catch (e) { }
             } else {
               state.lives -= 1;
               state.combo = 0;
               state.isFallingInHole = true;
-              try { if (typeof speak === 'function') speak('Ouch! Flying enemy hit!'); } catch (e) { }
+              try { if (typeof speak === 'function') speak('Watch out! Flying enemy!'); } catch (e) { }
             }
           }
         }
       } else {
-        // Collision check: if Tarzan is on the ground (y < 15) when reaching hole:
         if (obs.x < 24 && obs.x > 12 && state.y < 15 && !obs.hit && !state.isFallingInHole) {
           obs.hit = true;
           if (state.hasShield) {
             state.hasShield = false;
-            state.velocity = 10.5; // Shield super bounce!
-            state.popups.push({ id: now, text: '🛡️ BANANA SHIELD SAVED TARZAN!', x: 20, y: 30, opacity: 1 });
-            try {
-              if (typeof speak === 'function') speak('Banana Shield Saved Tarzan!');
-            } catch (e) { }
+            state.velocity = 10.5;
+            state.popups.push({ id: now, text: '🛡️ BANANA SHIELD SUPER LEAP!', x: 20, y: 30, opacity: 1 });
+            try { if (typeof speak === 'function') speak('Banana Shield Super Leap!'); } catch (e) { }
           } else {
             state.lives -= 1;
             state.combo = 0;
             state.isFallingInHole = true;
-
-            try {
-              if (typeof speak === 'function') speak('Whoops! Tarzan fell in a hole!');
-            } catch (e) { }
+            try { if (typeof speak === 'function') speak('Whoops! Tarzan fell in a hole!'); } catch (e) { }
           }
         }
       }
 
       if (obs.x < 10 && !obs.passed && !obs.hit) {
         obs.passed = true;
-        state.score += 5;
-        const required = 300 + (state.level * 100);
+        state.score += (now < state.doubleScoreUntil ? 10 : 5);
+        const required = 1500 + (state.level * 400);
         if (state.score >= required) {
-          if (state.level >= 10) state.status = 'victory';
+          if (state.level >= 5) state.status = 'victory';
           else state.status = 'levelup';
         }
       }
     });
 
-    // Move Dino eggs / fossils & check collection
+    // Move Gems & Powerups & check collection
     state.gems.forEach(gem => {
       gem.x -= 1.4 + ((state.level - 1) * 0.35);
       if (!gem.collected && gem.x < 26 && gem.x > 10 && Math.abs(state.y - gem.height) < 18) {
         gem.collected = true;
         state.combo += 1;
-        const bonusPts = 15 + (state.combo > 1 ? state.combo * 5 : 0);
-        state.score += bonusPts;
 
-        if (gem.word) {
-          if (!state.wordsLearned.some(w => w.word === gem.word)) {
-            state.wordsLearned.push({ type: gem.type, word: gem.word });
+        if (gem.isPowerup) {
+          if (gem.effect === 'shield') {
+            state.hasShield = true;
+            state.popups.push({ id: now, text: '🛡️ BANANA SHIELD ACTIVATED!', x: gem.x, y: gem.height + 25, opacity: 1 });
+            try { if (typeof speak === 'function') speak('Banana Shield Activated!'); } catch (e) { }
+          } else if (gem.effect === 'magnet') {
+            state.magnetUntil = now + 8000;
+            state.popups.push({ id: now, text: '🧲 JUNGLE MAGNET ACTIVATED! (8s)', x: gem.x, y: gem.height + 25, opacity: 1 });
+            try { if (typeof speak === 'function') speak('Jungle Magnet Active!'); } catch (e) { }
+          } else if (gem.effect === 'double') {
+            state.doubleScoreUntil = now + 8000;
+            state.popups.push({ id: now, text: '🌟 2X SCORE MULTIPLIER! (8s)', x: gem.x, y: gem.height + 25, opacity: 1 });
+            try { if (typeof speak === 'function') speak('Double Score Active!'); } catch (e) { }
+          }
+        } else {
+          // Check if collected target word!
+          const isTarget = isWordForest && gem.word === state.targetWord;
+          let bonusPts = (isTarget ? 50 : 15) + (state.combo > 1 ? state.combo * 5 : 0);
+          if (now < state.doubleScoreUntil) bonusPts *= 2;
+
+          state.score += bonusPts;
+
+          if (gem.word && !gem.isPowerup) {
+            if (!state.wordsLearned.some(w => w.word === gem.word)) {
+              state.wordsLearned.push({ type: gem.type, word: gem.word });
+            }
+          }
+
+          if (isTarget) {
+            // Advance Target Word
+            const pool = getLevelPool(state.level);
+            state.targetIdx = (state.targetIdx + 1) % pool.targetWords.length;
+            state.targetWord = pool.targetWords[state.targetIdx];
+
+            state.popups.push({
+              id: now,
+              text: `🎯 TARGET MATCH! +${bonusPts} ⭐`,
+              x: gem.x,
+              y: gem.height + 30,
+              opacity: 1
+            });
+
+            // Sparkle Particle Burst
+            for (let i = 0; i < 6; i++) {
+              state.particles.push({
+                id: now + i,
+                x: gem.x + (Math.random() - 0.5) * 10,
+                y: gem.height + (Math.random() - 0.5) * 10,
+                symbol: ['✨', '⭐', '🌟', '🍃'][Math.floor(Math.random() * 4)],
+                opacity: 1,
+                vy: 0.5 + Math.random() * 0.8
+              });
+            }
+
+            try {
+              if (typeof playSuccessSound === 'function') playSuccessSound();
+              if (typeof speak === 'function') speak(`${gem.word}! Target Completed! Super!`);
+            } catch (e) { }
+          } else {
+            state.popups.push({
+              id: now,
+              text: `+${bonusPts} ⭐ ${state.combo > 1 ? `${state.combo}x Combo! 🔥` : ''}`,
+              x: gem.x,
+              y: gem.height + 25,
+              opacity: 1
+            });
+
+            try {
+              if (typeof playSuccessSound === 'function') playSuccessSound();
+              if (typeof speak === 'function') speak(`${gem.word || 'Great'}!`);
+            } catch (e) { }
           }
         }
 
-        // Floating toast popup
-        state.popups.push({
-          id: now,
-          text: `+${bonusPts} ⭐ ${state.combo > 1 ? `${state.combo}x Combo! 🔥` : ''}`,
-          x: gem.x,
-          y: gem.height + 25,
-          opacity: 1
-        });
-
-        try {
-          if (typeof playSuccessSound === 'function') playSuccessSound();
-          if (typeof speak === 'function') speak(`${gem.word || 'Star'}!`);
-        } catch (e) { }
-
-        const required = 300 + (state.level * 100);
+        const required = 1500 + (state.level * 400);
         if (state.score >= required) {
-          if (state.level >= 10) state.status = 'victory';
+          if (state.level >= 5) state.status = 'victory';
           else state.status = 'levelup';
         }
       }
     });
 
-
-    // Update floating popups
+    // Update floating popups & particles
     state.popups.forEach(p => {
       p.y += 0.8;
       p.opacity -= 0.03;
     });
     state.popups = state.popups.filter(p => p.opacity > 0);
+
+    state.particles.forEach(pt => {
+      pt.y += pt.vy;
+      pt.opacity -= 0.04;
+    });
+    state.particles = state.particles.filter(pt => pt.opacity > 0);
 
     state.obstacles = state.obstacles.filter(obs => obs.x > -20);
     state.gems = state.gems.filter(gem => gem.x > -20 && !gem.collected);
@@ -7176,14 +7303,10 @@ function DinoJumperGame({ player, onBack, onComplete, isWordForest = true }) {
     requestRef.current = requestAnimationFrame(updateGame);
   };
 
-  React.useEffect(() => {
-    requestRef.current = requestAnimationFrame(updateGame);
-    return () => { if (requestRef.current) cancelAnimationFrame(requestRef.current); };
-  }, []);
-
   const handlePointerDown = (e) => {
     if (gameState.current.status !== 'playing') return;
-    e.preventDefault();
+    if (e && e.preventDefault) e.preventDefault();
+
     if (gameState.current.y === 0) {
       gameState.current.velocity = gameState.current.jumpForce;
       gameState.current.canDoubleJump = true;
@@ -7202,37 +7325,77 @@ function DinoJumperGame({ player, onBack, onComplete, isWordForest = true }) {
     }
   };
 
+  // Keyboard controls listener (Spacebar, Up Arrow, W Key)
+  React.useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (gameState.current.status === 'playing') {
+        if (e.code === 'Space' || e.code === 'ArrowUp' || e.code === 'KeyW') {
+          e.preventDefault();
+          handlePointerDown(e);
+        }
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
+  React.useEffect(() => {
+    requestRef.current = requestAnimationFrame(updateGame);
+    return () => { if (requestRef.current) cancelAnimationFrame(requestRef.current); };
+  }, []);
+
   const startGame = () => {
+    const pool = getLevelPool(1);
     gameState.current = {
       status: 'playing', score: 0, level: 1, lives: 3, y: 0, velocity: 0,
-      obstacles: [], gems: [], lastSpawn: Date.now(), gravity: -0.55, jumpForce: 8.5,
+      obstacles: [], gems: [], powerups: [], particles: [], lastSpawn: Date.now(), gravity: -0.45, jumpForce: 5.6,
       combo: 0, wordsLearned: [], popups: [], bgOffset: 0, canDoubleJump: false, isDoubleJumping: false,
-      hasShield: false
+      hasShield: false, magnetUntil: 0, doubleScoreUntil: 0,
+      targetIdx: 0, targetWord: pool.targetWords[0]
     };
     setRenderTick(t => t + 1);
   };
 
   const startNextLevel = () => {
+    const nextLvl = gameState.current.level + 1;
+    const pool = getLevelPool(nextLvl);
     gameState.current = {
       ...gameState.current,
       status: 'playing',
-      level: gameState.current.level + 1,
+      level: nextLvl,
       lives: Math.min(3, gameState.current.lives + 1),
       y: 0,
       velocity: 0,
       obstacles: [],
       gems: [],
+      particles: [],
       lastSpawn: Date.now(),
       combo: 0,
       wordsLearned: [],
       popups: [],
       canDoubleJump: false,
-      isDoubleJumping: false
+      isDoubleJumping: false,
+      targetIdx: 0,
+      targetWord: pool.targetWords[0]
     };
     setRenderTick(t => t + 1);
   };
 
   const state = gameState.current;
+  const currentPool = getLevelPool(state.level);
+  const now = Date.now();
+  const isMagnetActive = now < state.magnetUntil;
+  const isDoubleActive = now < state.doubleScoreUntil;
+
+  const getJungleBg = (lvl) => {
+    switch ((lvl - 1) % 5) {
+      case 0: return 'linear-gradient(180deg, #032719 0%, #0A5034 35%, #054028 70%, #022014 100%)';
+      case 1: return 'linear-gradient(180deg, #182B1D 0%, #28442E 35%, #423520 70%, #16271A 100%)';
+      case 2: return 'linear-gradient(180deg, #011510 0%, #033429 40%, #02241D 75%, #010F0C 100%)';
+      case 3: return 'linear-gradient(180deg, #0A1126 0%, #054534 45%, #02271E 100%)';
+      default: return 'linear-gradient(180deg, #241F12 0%, #083E2C 40%, #02281C 100%)';
+    }
+  };
 
   return (
     <div
@@ -7240,7 +7403,7 @@ function DinoJumperGame({ player, onBack, onComplete, isWordForest = true }) {
       onPointerDown={handlePointerDown}
       style={{
         background: isWordForest
-          ? 'linear-gradient(180deg, #043927 0%, #065F46 40%, #047857 70%, #022C22 100%)'
+          ? getJungleBg(state.level)
           : 'linear-gradient(180deg, #3B1F2B 0%, #5E2638 50%, #3E2723 100%)',
         color: '#fff',
         padding: 0,
@@ -7255,54 +7418,87 @@ function DinoJumperGame({ player, onBack, onComplete, isWordForest = true }) {
         touchAction: 'none'
       }}
     >
-      {/* Tarzan Running Animation Keyframes */}
+      {/* Background & Animations */}
       <style>{`
-        @keyframes tarzan-run {
-          0%   { transform: translateY(0px);  }
-          25%  { transform: translateY(-4px); }
-          50%  { transform: translateY(0px);  }
-          75%  { transform: translateY(-4px); }
-          100% { transform: translateY(0px);  }
+        @keyframes tarzan-run-fluid {
+          0%   { transform: translate(-50%, 0) rotate(-5deg) scaleY(0.96); }
+          50%  { transform: translate(-50%, -7px) rotate(0deg) scaleY(1.03); }
+          100% { transform: translate(-50%, 0) rotate(5deg) scaleY(0.96); }
         }
-        @keyframes leg-left {
-          0%   { transform: rotate(-35deg); }
-          50%  { transform: rotate(35deg);  }
-          100% { transform: rotate(-35deg); }
+        @keyframes pulse-target {
+          0% { transform: scale(1); box-shadow: 0 0 12px rgba(82, 183, 136, 0.4); }
+          100% { transform: scale(1.05); box-shadow: 0 0 28px rgba(52, 211, 153, 0.95); }
         }
-        @keyframes leg-right {
-          0%   { transform: rotate(35deg);  }
-          50%  { transform: rotate(-35deg); }
-          100% { transform: rotate(35deg);  }
+        @keyframes firefly-float {
+          0% { transform: translate(0, 0); opacity: 0.3; }
+          50% { transform: translate(18px, -24px); opacity: 0.95; }
+          100% { transform: translate(-12px, -45px); opacity: 0.1; }
         }
-        @keyframes arm-left {
-          0%   { transform: rotate(30deg);  }
-          50%  { transform: rotate(-30deg); }
-          100% { transform: rotate(30deg);  }
+        @keyframes bird-fly {
+          0%   { transform: translateX(-40px) translateY(0); opacity: 0.1; }
+          10%  { opacity: 0.85; }
+          90%  { opacity: 0.85; }
+          100% { transform: translateX(420px) translateY(-25px); opacity: 0; }
         }
-        @keyframes arm-right {
-          0%   { transform: rotate(-30deg); }
-          50%  { transform: rotate(30deg);  }
-          100% { transform: rotate(-30deg); }
+        @keyframes aura-rotate {
+          0%   { transform: rotate(0deg) scale(1); }
+          50%  { transform: rotate(180deg) scale(1.06); }
+          100% { transform: rotate(360deg) scale(1); }
         }
-        @keyframes tarzan-jump-arc {
-          0%   { transform: rotate(-8deg) scaleX(0.95); }
-          50%  { transform: rotate(8deg)  scaleX(1.05); }
-          100% { transform: rotate(-8deg) scaleX(0.95); }
+        @keyframes gem-pulse {
+          0%   { transform: scale(1); filter: drop-shadow(0 0 10px #34D399); }
+          50%  { transform: scale(1.1); filter: drop-shadow(0 0 22px #6EE7B7); }
+          100% { transform: scale(1); filter: drop-shadow(0 0 10px #34D399); }
+        }
+        @keyframes sun-ray {
+          0%   { opacity: 0.2; }
+          50%  { opacity: 0.45; }
+          100% { opacity: 0.2; }
+        }
+        @keyframes snake-hiss-lunge {
+          0%   { transform: translate(-50%, 0) rotate(0deg) scale(1); }
+          25%  { transform: translate(-68%, -28px) rotate(-24deg) scale(1.28); }
+          55%  { transform: translate(-85%, -46px) rotate(-38deg) scale(1.4); }
+          82%  { transform: translate(-62%, -20px) rotate(-14deg) scale(1.18); }
+          100% { transform: translate(-50%, 0) rotate(0deg) scale(1); }
+        }
+        @keyframes snake-tongue {
+          0%   { transform: scaleX(0.3); opacity: 0.2; }
+          50%  { transform: scaleX(1.5); opacity: 1; }
+          100% { transform: scaleX(0.3); opacity: 0.2; }
+        }
+        @keyframes venom-drip {
+          0%   { transform: translateY(0); opacity: 1; }
+          100% { transform: translateY(24px); opacity: 0; }
         }
       `}</style>
-      {/* Background Scenery (Word Forest vs Prehistoric Valley) */}
-      {isWordForest ? (
+
+      {/* Sun Ray Beam Overlay */}
+      {isWordForest && (
+        <div style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          width: '100%',
+          height: '100%',
+          background: 'radial-gradient(ellipse at 50% 0%, rgba(255, 235, 150, 0.25) 0%, transparent 68%)',
+          pointerEvents: 'none',
+          zIndex: 3,
+          animation: 'sun-ray 4s infinite ease-in-out'
+        }} />
+      )}
+
+      {/* Floating Fireflies, Birds & Forest FX */}
+      {isWordForest && (
         <>
-          <div style={{ position: 'absolute', top: '8%', left: '6%', fontSize: '42px', opacity: 0.3, filter: 'drop-shadow(0 0 10px #52B788)', animation: 'bounce-idle 2s infinite' }}>🌳</div>
-          <div style={{ position: 'absolute', top: '15%', right: '10%', fontSize: '38px', opacity: 0.25, filter: 'drop-shadow(0 0 12px #74C69D)' }}>🍃</div>
-          <div style={{ position: 'absolute', top: '35%', left: '78%', fontSize: '32px', opacity: 0.3 }}>🌿</div>
-          <div style={{ position: 'absolute', top: '25%', left: '40%', fontSize: '24px', opacity: 0.4, animation: 'pulse 1.5s infinite' }}>✨</div>
-        </>
-      ) : (
-        <>
-          <div style={{ position: 'absolute', top: '12%', left: '8%', fontSize: '32px', opacity: 0.35 }}>🌿</div>
-          <div style={{ position: 'absolute', top: '20%', right: '12%', fontSize: '48px', opacity: 0.25 }}>🌋</div>
-          <div style={{ position: 'absolute', top: '42%', left: '75%', fontSize: '36px', opacity: 0.3 }}>🌴</div>
+          <div style={{ position: 'absolute', top: '12%', left: '8%', fontSize: '18px', animation: 'firefly-float 4s infinite ease-in-out', zIndex: 2 }}>✨</div>
+          <div style={{ position: 'absolute', top: '22%', right: '14%', fontSize: '16px', animation: 'firefly-float 3.5s infinite ease-in-out 1s', zIndex: 2 }}>🌟</div>
+          <div style={{ position: 'absolute', top: '40%', left: '70%', fontSize: '20px', animation: 'firefly-float 5s infinite ease-in-out 0.5s', zIndex: 2 }}>✨</div>
+          <div style={{ position: 'absolute', top: '16%', left: '-20px', fontSize: '24px', animation: 'bird-fly 14s linear infinite', zIndex: 3, pointerEvents: 'none' }}>🦜</div>
+          <div style={{ position: 'absolute', top: '26%', left: '-20px', fontSize: '20px', animation: 'bird-fly 19s linear infinite 6s', zIndex: 3, pointerEvents: 'none' }}>🦋</div>
+          <div style={{ position: 'absolute', top: '8%', left: '6%', fontSize: '42px', opacity: 0.35, filter: 'drop-shadow(0 0 12px #52B788)', animation: 'bounce-idle 2s infinite' }}>🌳</div>
+          <div style={{ position: 'absolute', top: '15%', right: '10%', fontSize: '38px', opacity: 0.3, filter: 'drop-shadow(0 0 14px #74C69D)' }}>🍃</div>
+          <div style={{ position: 'absolute', top: '35%', left: '78%', fontSize: '32px', opacity: 0.35 }}>🌿</div>
         </>
       )}
 
@@ -7316,15 +7512,15 @@ function DinoJumperGame({ player, onBack, onComplete, isWordForest = true }) {
         background: isWordForest
           ? 'linear-gradient(180deg, #2D6A4F 0%, #1B4332 40%, #081C15 100%)'
           : 'linear-gradient(180deg, #5D4037 0%, #3E2723 100%)',
-        borderTop: isWordForest ? '4px solid #52B788' : '4px solid #8D6E63',
-        boxShadow: isWordForest ? '0 -4px 20px rgba(82,183,136,0.4)' : '0 -4px 20px rgba(78,52,46,0.5)'
+        borderTop: isWordForest ? '5px solid #4ADE80' : '4px solid #8D6E63',
+        boxShadow: isWordForest ? '0 -6px 25px rgba(74,222,128,0.5), inset 0 8px 16px rgba(0,0,0,0.6)' : '0 -4px 20px rgba(78,52,46,0.5)'
       }}>
         <div style={{ position: 'absolute', top: '12px', left: '15%', width: '18px', height: '5px', background: isWordForest ? '#74C69D' : '#8D6E63', borderRadius: '3px', opacity: 0.7 }} />
         <div style={{ position: 'absolute', top: '26px', left: '55%', width: '24px', height: '5px', background: isWordForest ? '#95D5B2' : '#A1887F', borderRadius: '3px', opacity: 0.8 }} />
         <div style={{ position: 'absolute', top: '18px', left: '80%', width: '16px', height: '5px', background: isWordForest ? '#74C69D' : '#8D6E63', borderRadius: '3px', opacity: 0.7 }} />
       </div>
 
-      {/* Top Header & Target Word Banner */}
+      {/* Top Header Controls */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', padding: '16px', zIndex: 20 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <button onClick={(e) => { e.stopPropagation(); onBack(); }} style={{
@@ -7387,24 +7583,51 @@ function DinoJumperGame({ player, onBack, onComplete, isWordForest = true }) {
           )}
         </div>
 
-        {/* Top Target Prompt Card for Word Forest ("Up Image Place") */}
+        {/* Active Power-up Status Pills */}
+        {state.status === 'playing' && (state.hasShield || isMagnetActive || isDoubleActive) && (
+          <div style={{ display: 'flex', gap: '6px', justifyContent: 'center', flexWrap: 'wrap' }}>
+            {state.hasShield && (
+              <span style={{ background: '#10B981', color: '#FFF', fontSize: '11px', fontWeight: 900, padding: '3px 10px', borderRadius: '12px', boxShadow: '0 2px 8px rgba(16,185,129,0.5)' }}>
+                🛡️ BANANA SHIELD READY
+              </span>
+            )}
+            {isMagnetActive && (
+              <span style={{ background: '#3B82F6', color: '#FFF', fontSize: '11px', fontWeight: 900, padding: '3px 10px', borderRadius: '12px', boxShadow: '0 2px 8px rgba(59,130,246,0.5)' }}>
+                🧲 MAGNET ACTIVE
+              </span>
+            )}
+            {isDoubleActive && (
+              <span style={{ background: '#F59E0B', color: '#FFF', fontSize: '11px', fontWeight: 900, padding: '3px 10px', borderRadius: '12px', boxShadow: '0 2px 8px rgba(245,158,11,0.5)' }}>
+                🌟 2X SCORE ACTIVE
+              </span>
+            )}
+          </div>
+        )}
+
+        {/* Target Phonics Challenge Banner */}
         {isWordForest && state.status === 'playing' && (
           <div style={{
             alignSelf: 'center',
-            background: 'rgba(6, 78, 59, 0.75)',
+            background: 'rgba(6, 78, 59, 0.85)',
             backdropFilter: 'blur(12px)',
-            border: '2px solid rgba(82, 183, 136, 0.6)',
+            border: '2px solid #34D399',
             borderRadius: '24px',
-            padding: '8px 20px',
+            padding: '8px 24px',
             display: 'flex',
             alignItems: 'center',
             gap: '12px',
+            animation: 'pulse-target 1.8s infinite alternate',
             boxShadow: '0 8px 24px rgba(0,0,0,0.4)'
           }}>
             <span style={{ fontSize: '24px' }}>🎯</span>
-            <span style={{ fontSize: '15px', fontWeight: 900, color: '#A7F3D0', letterSpacing: '0.04em' }}>
-              LEAP & TOUCH PHONICS WORDS!
-            </span>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
+              <span style={{ fontSize: '11px', fontWeight: 800, color: '#6EE7B7', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                TARGET WORD (COLLECT THIS):
+              </span>
+              <span style={{ fontSize: '20px', fontWeight: 900, color: '#FFD54F', letterSpacing: '0.1em', textShadow: '0 2px 8px rgba(0,0,0,0.8)' }}>
+                {state.targetWord || 'CAT'}
+              </span>
+            </div>
           </div>
         )}
 
@@ -7422,7 +7645,7 @@ function DinoJumperGame({ player, onBack, onComplete, isWordForest = true }) {
             marginTop: '2px'
           }}>
             <div style={{
-              width: `${Math.min(100, Math.floor((state.score / (300 + (state.level * 100))) * 100))}%`,
+              width: `${Math.min(100, Math.floor((state.score / (1500 + (state.level * 400))) * 100))}%`,
               height: '100%',
               background: 'linear-gradient(90deg, #10B981, #F59E0B)',
               borderRadius: '10px',
@@ -7447,13 +7670,13 @@ function DinoJumperGame({ player, onBack, onComplete, isWordForest = true }) {
             background: 'linear-gradient(135deg, #AED581, #FFD54F, #FF8A65)',
             WebkitBackgroundClip: 'text',
             WebkitTextFillColor: 'transparent'
-          }}>{isWordForest ? 'Tarzan Forest Dash' : 'Dino Valley Dash'}</h1>
-          <p style={{ fontSize: '16px', color: '#DCEDC8', maxWidth: '320px', marginBottom: '28px', lineHeight: 1.5 }}>
-            {isWordForest ? 'Help Tarzan leap over rolling boulders & lava pools to collect prehistoric Dino eggs!' : 'Help baby Dino leap over rolling boulders & lava pools to collect prehistoric Dino eggs!'}
+          }}>{isWordForest ? 'Tarzan Trojan Dash' : 'Dino Valley Dash'}</h1>
+          <p style={{ fontSize: '15px', color: '#DCEDC8', maxWidth: '340px', marginBottom: '24px', lineHeight: 1.5 }}>
+            {isWordForest ? 'Leap over pit traps & crocs, collect Phonics words & Banana Shields, and match target words! Press SPACE or tap screen to leap.' : 'Help baby Dino leap over rolling boulders & lava pools to collect prehistoric Dino eggs!'}
           </p>
           <button onClick={(e) => { e.stopPropagation(); startGame(); }} style={{
             background: 'linear-gradient(135deg, #7CB342, #33691E)',
-            border: 'none',
+            border: '2px solid #C0CA33',
             borderRadius: '32px',
             padding: '18px 48px',
             fontSize: '20px',
@@ -7498,7 +7721,7 @@ function DinoJumperGame({ player, onBack, onComplete, isWordForest = true }) {
             boxShadow: 'inset 0 30px 40px rgba(0,0,0,0.8), inset 0 -20px 40px #000'
           }} />
 
-          {/* Parallax Background Trees (Transparent overlay) */}
+          {/* Parallax Background Trees */}
           <div style={{
             position: 'absolute',
             top: 0,
@@ -7538,8 +7761,9 @@ function DinoJumperGame({ player, onBack, onComplete, isWordForest = true }) {
             </svg>
           )}
 
-          {/* Floating Prehistoric Dino Eggs / Fossils / Words */}
+          {/* Floating Gems, Words, & Powerups */}
           {state.gems.map(gem => {
+            const isTarget = isWordForest && gem.word === state.targetWord;
             const wordLabel = gem.word || (gem.type === '🍎' ? 'APPLE' : gem.type === '⭐' ? 'STAR' : 'WORD');
             return (
               <div key={gem.id} style={{
@@ -7548,27 +7772,56 @@ function DinoJumperGame({ player, onBack, onComplete, isWordForest = true }) {
                 left: `${gem.x}%`,
                 transform: 'translate(-50%, 0)',
                 zIndex: 5,
-                animation: 'bounce-idle 1s infinite'
+                animation: isTarget ? 'gem-pulse 1s infinite ease-in-out alternate' : 'bounce-idle 1s infinite'
               }}>
                 {isWordForest ? (
-                  <div style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '6px',
-                    filter: 'drop-shadow(0 6px 14px rgba(0,0,0,0.7))',
-                    userSelect: 'none'
-                  }}>
-                    <span style={{ fontSize: '32px', filter: 'drop-shadow(0 4px 8px rgba(0,0,0,0.4))' }}>{gem.type}</span>
-                    <span style={{
-                      fontSize: '22px',
-                      fontWeight: 900,
-                      color: '#FFD54F',
-                      textShadow: '0 3px 6px rgba(0,0,0,0.9), 0 0 12px rgba(255,213,79,0.7)',
-                      letterSpacing: '0.06em'
+                  gem.isPowerup ? (
+                    <div style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                      padding: '6px 14px',
+                      background: 'radial-gradient(circle at 30% 30%, rgba(255,255,255,0.45), rgba(255,255,255,0.15))',
+                      border: '2px solid rgba(255,255,255,0.9)',
+                      borderRadius: '24px',
+                      backdropFilter: 'blur(6px)',
+                      boxShadow: '0 0 20px rgba(255,255,255,0.8), inset 0 0 10px rgba(255,255,255,0.5)',
+                      animation: 'pulse 1.2s infinite alternate'
                     }}>
-                      {wordLabel}
-                    </span>
-                  </div>
+                      <span style={{ fontSize: '36px', filter: 'drop-shadow(0 0 10px #FFF)' }}>{gem.type}</span>
+                      <span style={{ fontSize: '15px', fontWeight: 900, color: '#FFF', textShadow: '0 2px 6px #000', letterSpacing: '0.06em' }}>
+                        {gem.word}
+                      </span>
+                    </div>
+                  ) : (
+                    <div style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      padding: isTarget ? '6px 14px' : '4px 10px',
+                      background: isTarget
+                        ? 'linear-gradient(135deg, rgba(16, 185, 129, 0.45), rgba(5, 150, 105, 0.65))'
+                        : 'rgba(0,0,0,0.3)',
+                      border: isTarget ? '2px solid #34D399' : '1px solid rgba(255,255,255,0.2)',
+                      borderRadius: '20px',
+                      backdropFilter: 'blur(8px)',
+                      boxShadow: isTarget
+                        ? '0 0 24px #34D399, inset 0 0 12px rgba(52, 211, 153, 0.6)'
+                        : '0 6px 14px rgba(0,0,0,0.5)',
+                      userSelect: 'none'
+                    }}>
+                      <span style={{ fontSize: isTarget ? '36px' : '30px', filter: isTarget ? 'drop-shadow(0 0 12px #34D399)' : 'none' }}>{gem.type}</span>
+                      <span style={{
+                        fontSize: isTarget ? '24px' : '19px',
+                        fontWeight: 900,
+                        color: isTarget ? '#A7F3D0' : '#FFD54F',
+                        textShadow: isTarget ? '0 0 14px #34D399, 0 3px 6px #000' : '0 3px 6px rgba(0,0,0,0.9)',
+                        letterSpacing: '0.08em'
+                      }}>
+                        {wordLabel}
+                      </span>
+                    </div>
+                  )
                 ) : (
                   <div style={{ fontSize: '34px', filter: 'drop-shadow(0 0 10px #C0CA33)' }}>
                     {gem.type}
@@ -7578,7 +7831,22 @@ function DinoJumperGame({ player, onBack, onComplete, isWordForest = true }) {
             );
           })}
 
-          {/* Obstacles: Pit Holes for Word Forest / Boulders for Dino Valley */}
+          {/* Floating Sparkle Particles */}
+          {state.particles.map(pt => (
+            <div key={pt.id} style={{
+              position: 'absolute',
+              bottom: `calc(22% + ${pt.y}%)`,
+              left: `${pt.x}%`,
+              fontSize: '22px',
+              opacity: pt.opacity,
+              zIndex: 12,
+              pointerEvents: 'none'
+            }}>
+              {pt.symbol}
+            </div>
+          ))}
+
+          {/* Obstacles & Pit Holes */}
           {state.obstacles.map(obs => {
             if (obs.isFlying) {
               return (
@@ -7597,8 +7865,132 @@ function DinoJumperGame({ player, onBack, onComplete, isWordForest = true }) {
                 </div>
               );
             }
+            if (obs.type === '🐍' || obs.label === 'COBRA STRIKE' || obs.label === 'SNAKE PIT') {
+              return (
+                <div key={obs.id} style={{
+                  position: 'absolute',
+                  bottom: 0,
+                  left: `${obs.x}%`,
+                  transform: 'translateX(-50%)',
+                  width: '130px',
+                  height: '22%',
+                  zIndex: 7,
+                  pointerEvents: 'none'
+                }}>
+                  {/* Underground Snake Pit Hole Container */}
+                  <div style={{
+                    width: '100%',
+                    height: '100%',
+                    background: 'linear-gradient(180deg, #0A0A0A 0%, #000000 100%)',
+                    boxShadow: 'inset 0 12px 24px rgba(0,0,0,1), inset 10px 0 16px rgba(0,0,0,0.9), inset -10px 0 16px rgba(0,0,0,0.9)',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'flex-start',
+                    position: 'relative',
+                    overflow: 'visible'
+                  }}>
+                    {/* Pit Top Moss Edge Lip */}
+                    <div style={{
+                      position: 'absolute',
+                      top: '-4px',
+                      left: '-5%',
+                      width: '110%',
+                      height: '8px',
+                      background: '#10B981',
+                      borderRadius: '0 0 50% 50%',
+                      boxShadow: '0 4px 10px rgba(16,185,129,0.8), inset 0 -2px 4px rgba(0,0,0,0.8)'
+                    }} />
+
+                    {/* Subterranean Pit Spikes & Roots in Deep Pit */}
+                    <div style={{ position: 'absolute', bottom: '-5px', display: 'flex', width: '100%', justifyContent: 'space-between', padding: '0 10px', opacity: 0.6 }}>
+                      <div style={{ width: 0, height: 0, borderLeft: '10px solid transparent', borderRight: '10px solid transparent', borderBottom: '38px solid #064E3B' }} />
+                      <div style={{ width: 0, height: 0, borderLeft: '12px solid transparent', borderRight: '12px solid transparent', borderBottom: '52px solid #047857' }} />
+                      <div style={{ width: 0, height: 0, borderLeft: '10px solid transparent', borderRight: '10px solid transparent', borderBottom: '35px solid #065F46' }} />
+                    </div>
+
+                    {/* Cobra Snake Rising UP OUT of the Deep Pit Hole */}
+                    <div style={{
+                      position: 'absolute',
+                      top: obs.isStriking ? '-52px' : '4px',
+                      transition: 'top 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      zIndex: 10,
+                      animation: obs.isStriking
+                        ? 'snake-hiss-lunge 0.35s infinite ease-in-out alternate'
+                        : 'bounce-idle 1.2s infinite ease-in-out'
+                    }}>
+                      {/* Cobra Head & Hood */}
+                      <div style={{
+                        position: 'relative',
+                        fontSize: '62px',
+                        filter: 'drop-shadow(0 0 18px rgba(16,185,129,0.9)) drop-shadow(0 10px 16px rgba(0,0,0,0.9))',
+                        zIndex: 3
+                      }}>
+                        🐍
+                        {/* Red Glowing Eyes FX */}
+                        <div style={{
+                          position: 'absolute',
+                          top: '16px',
+                          left: '12px',
+                          fontSize: '12px',
+                          filter: 'drop-shadow(0 0 8px #FF1744)'
+                        }}>
+                          🔴🔴
+                        </div>
+
+                        {/* Flickering Forked Tongue */}
+                        <div style={{
+                          position: 'absolute',
+                          bottom: '-6px',
+                          left: '4px',
+                          fontSize: '18px',
+                          animation: 'snake-tongue 0.3s infinite ease-in-out',
+                          transformOrigin: 'left center'
+                        }}>
+                          👅
+                        </div>
+
+                        {/* Dripping Venom Drops */}
+                        {obs.isStriking && (
+                          <div style={{
+                            position: 'absolute',
+                            bottom: '-14px',
+                            left: '16px',
+                            fontSize: '14px',
+                            animation: 'venom-drip 0.5s infinite linear'
+                          }}>
+                            💧
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Hazard Badge on Underground Pit Wall */}
+                    <div style={{
+                      position: 'absolute',
+                      bottom: '12px',
+                      background: obs.isStriking ? 'linear-gradient(135deg, #DC2626, #991B1B)' : 'rgba(0,0,0,0.85)',
+                      border: '1.5px solid #EF4444',
+                      padding: '3px 10px',
+                      borderRadius: '10px',
+                      fontSize: '11px',
+                      fontWeight: 900,
+                      color: '#FFF',
+                      boxShadow: '0 0 12px rgba(239,68,68,0.8)',
+                      whiteSpace: 'nowrap',
+                      zIndex: 12,
+                      animation: obs.isStriking ? 'pulse 0.4s infinite alternate' : 'none'
+                    }}>
+                      🐍 {obs.isStriking ? 'SNAKE BURST OUT OF PIT!' : 'SNAKE PIT HOLE'}
+                    </div>
+                  </div>
+                </div>
+              );
+            }
             if (!isWordForest) {
-              // Dino Valley: classic boulder/volcano obstacles
               return (
                 <div key={obs.id} style={{
                   position: 'absolute',
@@ -7614,7 +8006,6 @@ function DinoJumperGame({ player, onBack, onComplete, isWordForest = true }) {
                 </div>
               );
             }
-            // Word Forest: Realistic 3D Subterranean Ground Danger Pit Holes
             return (
               <div key={obs.id} style={{
                 position: 'absolute',
@@ -7626,7 +8017,6 @@ function DinoJumperGame({ player, onBack, onComplete, isWordForest = true }) {
                 zIndex: 6,
                 pointerEvents: 'none'
               }}>
-                {/* Realistic Spiky Pit Hole */}
                 <div style={{
                   width: '100%',
                   height: '100%',
@@ -7639,17 +8029,14 @@ function DinoJumperGame({ player, onBack, onComplete, isWordForest = true }) {
                   position: 'relative',
                   overflow: 'hidden'
                 }}>
-                  {/* Grass Overhang at Top */}
                   <div style={{ position: 'absolute', top: 0, left: '-5%', width: '110%', height: '8px', background: '#2E7D32', borderRadius: '0 0 50% 50%', boxShadow: '0 4px 6px rgba(0,0,0,0.9)' }} />
 
-                  {/* Spikes at the bottom */}
                   <div style={{ position: 'absolute', bottom: '-5px', display: 'flex', width: '100%', justifyContent: 'space-between', padding: '0 10px' }}>
                     <div style={{ width: 0, height: 0, borderLeft: '12px solid transparent', borderRight: '12px solid transparent', borderBottom: '45px solid #9E9E9E', filter: 'drop-shadow(0 -2px 4px #000)' }} />
                     <div style={{ width: 0, height: 0, borderLeft: '14px solid transparent', borderRight: '14px solid transparent', borderBottom: '60px solid #BDBDBD', filter: 'drop-shadow(0 -2px 4px #000)' }} />
                     <div style={{ width: 0, height: 0, borderLeft: '12px solid transparent', borderRight: '12px solid transparent', borderBottom: '40px solid #757575', filter: 'drop-shadow(0 -2px 4px #000)' }} />
                   </div>
 
-                  {/* Hazard Emoji floating in the pit (optional based on type) */}
                   <div style={{
                     fontSize: '28px',
                     marginTop: '20px',
@@ -7660,7 +8047,6 @@ function DinoJumperGame({ player, onBack, onComplete, isWordForest = true }) {
                     {obs.type === '🕳️' ? '💀' : obs.type}
                   </div>
 
-                  {/* Phonics Word Label (if any) */}
                   {obs.word && (
                     <div style={{
                       position: 'absolute',
@@ -7684,23 +8070,44 @@ function DinoJumperGame({ player, onBack, onComplete, isWordForest = true }) {
             );
           })}
 
-          {/* Ground Horizon Track */}
+          {/* Ground Track */}
           <div style={{ position: 'absolute', bottom: '22%', left: 0, right: 0, height: '4px', background: 'rgba(255,255,255,0.2)', zIndex: 5, boxShadow: '0 2px 8px rgba(0,0,0,0.8)' }} />
 
-          {/* Player Character: Tarzan Hero in Word Forest */}
+          {/* Player Ground Dynamic Shadow */}
+          {isWordForest && !state.isFallingInHole && (
+            <div style={{
+              position: 'absolute',
+              bottom: 'calc(22% - 4px)',
+              left: '20%',
+              width: `${Math.max(16, 56 - state.y * 0.9)}px`,
+              height: '10px',
+              background: 'rgba(0,0,0,0.55)',
+              borderRadius: '50%',
+              transform: 'translateX(-50%)',
+              filter: 'blur(3px)',
+              zIndex: 9
+            }} />
+          )}
+
+          {/* Player Character */}
           {isWordForest ? (
             <div style={{
               position: 'absolute',
               bottom: `calc(22% - 38px + ${state.y}%)`,
               left: '20%',
-              transform: `translate(-50%, 0) ${state.isFallingInHole ? 'rotate(45deg) scale(0.65)' : ''}`,
+              transform: state.isFallingInHole
+                ? 'translate(-50%, 0) rotate(45deg) scale(0.65)'
+                : state.y > 0
+                  ? `translate(-50%, 0) rotate(${state.isDoubleJumping ? '-18deg' : '-12deg'})`
+                  : 'translate(-50%, 0)',
               width: '76px',
               height: '100px',
               zIndex: 10,
-              filter: 'drop-shadow(0 8px 16px rgba(0,0,0,0.6))',
+              filter: state.hasShield ? 'drop-shadow(0 0 24px #10B981)' : 'drop-shadow(0 8px 16px rgba(0,0,0,0.6))',
               display: 'flex',
               alignItems: 'center',
-              justifyContent: 'center'
+              justifyContent: 'center',
+              animation: (state.y === 0 && !state.isFallingInHole) ? 'tarzan-run-fluid 0.32s infinite ease-in-out alternate' : 'none'
             }}>
               <img
                 src="/tarzan_hero.png"
@@ -7712,6 +8119,28 @@ function DinoJumperGame({ player, onBack, onComplete, isWordForest = true }) {
                   mixBlendMode: 'multiply'
                 }}
               />
+              {state.hasShield && (
+                <div style={{
+                  position: 'absolute',
+                  width: '95px',
+                  height: '115px',
+                  borderRadius: '50%',
+                  border: '3px dashed #10B981',
+                  boxShadow: '0 0 24px #10B981, inset 0 0 12px rgba(16,185,129,0.5)',
+                  animation: 'aura-rotate 4s linear infinite'
+                }} />
+              )}
+              {isMagnetActive && (
+                <div style={{
+                  position: 'absolute',
+                  width: '110px',
+                  height: '125px',
+                  borderRadius: '50%',
+                  border: '3px dashed #60A5FA',
+                  boxShadow: '0 0 25px rgba(96,165,250,0.8), inset 0 0 15px rgba(96,165,250,0.4)',
+                  animation: 'aura-rotate 3s linear infinite'
+                }} />
+              )}
               {state.isFallingInHole && (
                 <div style={{
                   position: 'absolute',
@@ -7747,7 +8176,7 @@ function DinoJumperGame({ player, onBack, onComplete, isWordForest = true }) {
         </div>
       )}
 
-      {/* Tactile Jump Action Deck (Positioned at Bottom-Right Corner so Ground Pits are 100% Unobstructed) */}
+      {/* Tactile Jump Action Button */}
       {state.status === 'playing' && (
         <div style={{
           position: 'absolute',
@@ -7762,21 +8191,21 @@ function DinoJumperGame({ player, onBack, onComplete, isWordForest = true }) {
               background: 'linear-gradient(135deg, #FFD54F, #FF8E53)',
               border: '2px solid #FFF',
               borderRadius: '24px',
-              padding: '10px 20px',
-              fontSize: '14px',
+              padding: '12px 24px',
+              fontSize: '16px',
               fontWeight: 900,
               color: '#1B5E20',
               cursor: 'pointer',
               boxShadow: '0 6px 20px rgba(0,0,0,0.6)',
               display: 'flex',
               alignItems: 'center',
-              gap: '6px',
+              gap: '8px',
               animation: 'bounce-idle 1.5s infinite'
             }}
             type="button"
           >
             <span>🦘</span>
-            <span>LEAP!</span>
+            <span>LEAP! [SPACE]</span>
           </button>
         </div>
       )}
@@ -7805,21 +8234,20 @@ function DinoJumperGame({ player, onBack, onComplete, isWordForest = true }) {
         </div>
       )}
 
-      {/* Level Cleared Screen */}
+      {/* Level Cleared Screen with Interactive Dictionary */}
       {state.status === 'levelup' && (
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '24px', textAlign: 'center', zIndex: 30, background: 'rgba(6, 78, 59, 0.95)', backdropFilter: 'blur(16px)' }}>
-          <div style={{ fontSize: '84px', marginBottom: '12px', animation: 'bounce-idle 1s infinite' }}>🌟</div>
-          <h2 style={{ fontSize: '32px', fontWeight: 900, color: '#FFD54F', marginBottom: '6px' }}>
-            {isWordForest ? `Level ${state.level} Mastered! 🎉` : `Dino Valley ${state.level} Cleared!`}
+          <div style={{ fontSize: '72px', marginBottom: '8px', animation: 'bounce-idle 1.5s infinite' }}>🌟</div>
+          <h2 style={{ fontSize: '28px', fontWeight: 900, color: '#FFD54F', marginBottom: '4px' }}>
+            {isWordForest ? `${currentPool.name} Mastered! 🎉` : `Dino Valley ${state.level} Cleared!`}
           </h2>
 
-          {/* Words Learned Recap Grid */}
           {isWordForest && state.wordsLearned.length > 0 && (
             <div style={{ margin: '14px 0 20px', width: '100%', maxWidth: '360px' }}>
               <div style={{ fontSize: '13px', fontWeight: 800, color: '#6EE7B7', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '10px' }}>
-                Words Learned This Level (Tap to Hear):
+                Phonics Words Learned (Tap 🔊 to Hear):
               </div>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', justifyContent: 'center' }}>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', justifyContent: 'center', maxHeight: '140px', overflowY: 'auto' }}>
                 {state.wordsLearned.map((w, idx) => (
                   <button
                     key={idx}
@@ -7845,15 +8273,16 @@ function DinoJumperGame({ player, onBack, onComplete, isWordForest = true }) {
                   >
                     <span style={{ fontSize: '18px' }}>{w.type}</span>
                     <span>{w.word}</span>
+                    <span style={{ fontSize: '14px', opacity: 0.8 }}>🔊</span>
                   </button>
                 ))}
               </div>
             </div>
           )}
 
-          <p style={{ fontSize: '16px', color: '#A7F3D0', maxWidth: '340px', marginBottom: '24px', lineHeight: 1.5 }}>
+          <p style={{ fontSize: '15px', color: '#A7F3D0', maxWidth: '340px', marginBottom: '24px', lineHeight: 1.4 }}>
             {isWordForest
-              ? `Amazing! Tarzan learned all Phonics words in Level ${state.level}! Ready to unlock Level ${state.level + 1} with NEW words?`
+              ? `Outstanding! Tarzan learned all target Phonics words in Level ${state.level}! Ready to unlock Level ${state.level + 1}?`
               : 'The next Jurassic zone opens up!'}
           </p>
 
@@ -7869,17 +8298,18 @@ function DinoJumperGame({ player, onBack, onComplete, isWordForest = true }) {
             boxShadow: '0 8px 32px rgba(16,185,129,0.5)',
             zIndex: 35
           }} type="button">
-            {isWordForest ? `Go to Level ${state.level + 1}: Learn New Words 🚀` : `Next Dino Zone 🦕`}
+            {isWordForest ? `Unlock Level ${state.level + 1} 🚀` : `Next Dino Zone 🦕`}
           </button>
         </div>
       )}
 
+      {/* Victory Screen */}
       {state.status === 'victory' && (
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '24px', textAlign: 'center', zIndex: 30, background: 'rgba(6, 78, 59, 0.95)', backdropFilter: 'blur(16px)' }}>
-          <div style={{ fontSize: '100px', marginBottom: '20px', animation: 'bounce-idle 2s infinite', filter: 'drop-shadow(0 0 40px #FFD54F)' }}>🏆</div>
-          <h2 style={{ fontSize: '40px', fontWeight: 900, color: '#FFD54F', marginBottom: '16px' }}>Jungle Legend!</h2>
-          <p style={{ fontSize: '20px', color: '#FFF8E1', marginBottom: '40px' }}>You earned +100 Coins & +1 Star!</p>
-          <button onClick={() => onComplete(100, 50, 1)} style={{ background: 'linear-gradient(135deg, #10B981, #047857)', border: '2px solid #6EE7B7', borderRadius: '32px', padding: '20px 48px', fontSize: '22px', fontWeight: 900, color: '#fff', cursor: 'pointer', boxShadow: '0 8px 32px rgba(16,185,129,0.5)', zIndex: 35 }} type="button">
+          <div style={{ fontSize: '90px', marginBottom: '16px', animation: 'bounce-idle 2s infinite', filter: 'drop-shadow(0 0 40px #FFD54F)' }}>🏆</div>
+          <h2 style={{ fontSize: '36px', fontWeight: 900, color: '#FFD54F', marginBottom: '12px' }}>Jungle Trojan Champion!</h2>
+          <p style={{ fontSize: '18px', color: '#FFF8E1', marginBottom: '32px' }}>You mastered all Phonics Levels & earned +100 Coins & +1 Star!</p>
+          <button onClick={() => onComplete(100, 50, 1)} style={{ background: 'linear-gradient(135deg, #10B981, #047857)', border: '2px solid #6EE7B7', borderRadius: '32px', padding: '20px 48px', fontSize: '20px', fontWeight: 900, color: '#fff', cursor: 'pointer', boxShadow: '0 8px 32px rgba(16,185,129,0.5)', zIndex: 35 }} type="button">
             Claim Rewards
           </button>
         </div>

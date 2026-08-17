@@ -58,5 +58,8 @@ dependencies {
     // Jetpack DataStore Preferences for offline persistence
     implementation("androidx.datastore:datastore-preferences:1.1.1")
 
+    // Google Mobile Ads (AdMob) SDK
+    implementation("com.google.android.gms:play-services-ads:23.3.0")
+
     debugImplementation("androidx.compose.ui:ui-tooling")
 }

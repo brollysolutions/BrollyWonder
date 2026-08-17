@@ -20,6 +20,7 @@ import androidx.compose.ui.unit.sp
 import com.wonderverse.academy.data.Kingdom
 import com.wonderverse.academy.data.PlayerState
 import com.wonderverse.academy.data.demoKingdoms
+import com.wonderverse.academy.ui.components.AdBanner
 import com.wonderverse.academy.ui.components.TopStatusBar
 import com.wonderverse.academy.ui.theme.CreamBg
 import com.wonderverse.academy.ui.theme.InkText
@@ -60,14 +61,18 @@ fun KingdomMapScreen(
 
         LazyVerticalGrid(
             columns = GridCells.Fixed(2),
-            contentPadding = PaddingValues(20.dp),
+            contentPadding = PaddingValues(horizontal = 20.dp, vertical = 8.dp),
             horizontalArrangement = Arrangement.spacedBy(14.dp),
-            verticalArrangement = Arrangement.spacedBy(14.dp)
+            verticalArrangement = Arrangement.spacedBy(14.dp),
+            modifier = Modifier.weight(1f)
         ) {
             items(demoKingdoms) { kingdom ->
                 KingdomCard(kingdom = kingdom, onClick = { if (!kingdom.locked) onOpenKingdom(kingdom.id) })
             }
         }
+
+        // AdMob Banner at bottom
+        AdBanner()
     }
 }
 

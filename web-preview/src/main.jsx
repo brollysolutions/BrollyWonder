@@ -616,6 +616,525 @@ function addRewards(player, coinsEarned, xpEarned, starsEarned) {
   next.xpToNextLevel = max;
   return next;
 }
+
+function WebAdBanner({ onWatchRewarded }) {
+  const [closed, setClosed] = useState(false);
+  const [adIdx, setAdIdx] = useState(0);
+
+  const ads = [
+    { title: "🚀 VIP Explorer Pass", sub: "Learn Phonics 3x Faster + Unlock Dragon Pet Skin!", cta: "Get VIP", emoji: "✨", bg: "linear-gradient(135deg, #1E1B4B 0%, #312E81 100%)", border: "#6366F1" },
+    { title: "🎬 Free Rewards Available!", sub: "Watch a short video to earn +50 Bonus Coins instantly!", cta: "Watch Ad", emoji: "🎁", bg: "linear-gradient(135deg, #064E3B 0%, #047857 100%)", border: "#10B981" },
+    { title: "🐉 Pet Academy Challenge", sub: "Feed your dragon & earn 100 Stars today!", cta: "Explore", emoji: "🔥", bg: "linear-gradient(135deg, #7C2D12 0%, #C2410C 100%)", border: "#F97316" }
+  ];
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setAdIdx(prev => (prev + 1) % ads.length);
+    }, 7000);
+    return () => clearInterval(timer);
+  }, []);
+
+  if (closed) {
+    return (
+      <div style={{ position: 'sticky', bottom: '10px', right: '10px', zIndex: 9999, display: 'flex', justifyContent: 'flex-end', padding: '0 12px 10px' }}>
+        <button
+          onClick={() => setClosed(false)}
+          style={{
+            background: 'linear-gradient(135deg, #6366F1, #4F46E5)',
+            color: '#FFF',
+            border: '2px solid #FFF',
+            borderRadius: '999px',
+            padding: '6px 14px',
+            fontSize: '11px',
+            fontWeight: 900,
+            cursor: 'pointer',
+            boxShadow: '0 4px 14px rgba(99,102,241,0.5)',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px'
+          }}
+          type="button"
+        >
+          <span>📢 Show Ads</span>
+        </button>
+      </div>
+    );
+  }
+
+  const currentAd = ads[adIdx];
+
+  return (
+    <div style={{
+      position: 'relative',
+      margin: '8px 12px 16px',
+      background: currentAd.bg,
+      border: `2px solid ${currentAd.border}`,
+      borderRadius: '20px',
+      padding: '10px 14px',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      boxShadow: '0 8px 24px rgba(0,0,0,0.3)',
+      color: '#FFF',
+      transition: 'all 0.5s ease',
+      zIndex: 100
+    }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1, minWidth: 0 }}>
+        <div style={{
+          fontSize: '26px',
+          background: 'rgba(255,255,255,0.15)',
+          borderRadius: '16px',
+          width: '42px',
+          height: '42px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          flexShrink: 0
+        }}>
+          {currentAd.emoji}
+        </div>
+        <div style={{ overflow: 'hidden' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <span style={{
+              background: '#FFD54F',
+              color: '#000',
+              fontSize: '9px',
+              fontWeight: 900,
+              padding: '1px 5px',
+              borderRadius: '4px',
+              textTransform: 'uppercase'
+            }}>Ad • AdMob</span>
+            <span style={{ fontSize: '13px', fontWeight: 900, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+              {currentAd.title}
+            </span>
+          </div>
+          <p style={{ fontSize: '11px', color: 'rgba(255,255,255,0.85)', margin: '2px 0 0', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+            {currentAd.sub}
+          </p>
+        </div>
+      </div>
+
+      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginLeft: '8px', flexShrink: 0 }}>
+        <button
+          onClick={() => {
+            if (onWatchRewarded) onWatchRewarded();
+          }}
+          style={{
+            background: 'linear-gradient(135deg, #FFD54F, #FF8E53)',
+            color: '#000',
+            border: 'none',
+            borderRadius: '14px',
+            padding: '7px 14px',
+            fontSize: '12px',
+            fontWeight: 900,
+            cursor: 'pointer',
+            boxShadow: '0 4px 12px rgba(255,213,79,0.4)',
+            whiteSpace: 'nowrap'
+          }}
+          type="button"
+        >
+          {currentAd.cta}
+        </button>
+        <button
+          onClick={() => setClosed(true)}
+          style={{
+            background: 'rgba(255,255,255,0.2)',
+            color: 'rgba(255,255,255,0.7)',
+            border: 'none',
+            borderRadius: '50%',
+            width: '24px',
+            height: '24px',
+            fontSize: '14px',
+            fontWeight: 900,
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center'
+          }}
+          type="button"
+        >
+          ✕
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function WebRewardedAdModal({ onClose, onRewardClaimed }) {
+  const [secondsLeft, setSecondsLeft] = useState(5);
+  const [isCompleted, setIsCompleted] = useState(false);
+  const [soundOn, setSoundOn] = useState(true);
+
+  useEffect(() => {
+    if (secondsLeft > 0) {
+      const timer = setInterval(() => {
+        setSecondsLeft(s => s - 1);
+      }, 1000);
+      return () => clearInterval(timer);
+    } else {
+      setIsCompleted(true);
+      if (typeof playSuccessSound === 'function') playSuccessSound();
+    }
+  }, [secondsLeft]);
+
+  const handleClaim = () => {
+    if (onRewardClaimed) onRewardClaimed(50);
+    onClose();
+  };
+
+  return (
+    <div style={{
+      position: 'fixed',
+      inset: 0,
+      background: 'rgba(0,0,0,0.85)',
+      backdropFilter: 'blur(12px)',
+      zIndex: 99999,
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: '20px'
+    }}>
+      <div style={{
+        width: '100%',
+        maxWidth: '380px',
+        background: 'linear-gradient(180deg, #1E1B4B 0%, #0F172A 100%)',
+        border: '3px solid #6366F1',
+        borderRadius: '28px',
+        overflow: 'hidden',
+        boxShadow: '0 20px 60px rgba(99,102,241,0.5)',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center'
+      }}>
+        {/* Ad Video Header */}
+        <div style={{
+          width: '100%',
+          padding: '14px 18px',
+          background: 'rgba(255,255,255,0.06)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          borderBottom: '1px solid rgba(255,255,255,0.1)'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <span style={{ background: '#FFD54F', color: '#000', fontSize: '10px', fontWeight: 900, padding: '2px 6px', borderRadius: '4px' }}>ADMOB AD</span>
+            <span style={{ fontSize: '12px', color: '#A5B4FC', fontWeight: 800 }}>Sponsored Reward Video</span>
+          </div>
+
+          <button
+            onClick={() => setSoundOn(!soundOn)}
+            style={{ background: 'rgba(255,255,255,0.15)', border: 'none', borderRadius: '50%', width: '32px', height: '32px', color: '#FFF', fontSize: '14px', cursor: 'pointer' }}
+            type="button"
+          >
+            {soundOn ? '🔊' : '🔇'}
+          </button>
+        </div>
+
+        {/* Video Player Screen Simulation */}
+        <div style={{
+          width: '100%',
+          height: '210px',
+          background: 'linear-gradient(135deg, #312E81 0%, #4338CA 50%, #1E1B4B 100%)',
+          position: 'relative',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '16px',
+          textAlign: 'center'
+        }}>
+          <div style={{ fontSize: '64px', marginBottom: '8px', animation: isCompleted ? 'bounce-idle 1s infinite' : 'sway-wobble 2s infinite alternate' }}>
+            {isCompleted ? '🎉 🪙 ✨' : '🚀 🐉 🏰'}
+          </div>
+          <div style={{ fontSize: '18px', fontWeight: 900, color: '#FFF', textShadow: '0 2px 8px rgba(0,0,0,0.5)' }}>
+            {isCompleted ? 'REWARD UNLOCKED!' : 'WonderVerse Academy VIP Pass'}
+          </div>
+          <div style={{ fontSize: '12px', color: '#C7D2FE', marginTop: '4px' }}>
+            {isCompleted ? 'You earned 50 Bonus Coins & 20 Gems!' : 'Learn Phonics, Math & Science with 3D Adventures!'}
+          </div>
+
+          {/* Video Countdown badge overlay */}
+          {!isCompleted ? (
+            <div style={{
+              position: 'absolute',
+              top: '12px',
+              right: '12px',
+              background: 'rgba(0,0,0,0.6)',
+              borderRadius: '999px',
+              padding: '4px 12px',
+              fontSize: '11px',
+              fontWeight: 900,
+              color: '#FFD54F',
+              border: '1px solid #FFD54F'
+            }}>
+              Reward in {secondsLeft}s ⏱️
+            </div>
+          ) : (
+            <div style={{
+              position: 'absolute',
+              top: '12px',
+              right: '12px',
+              background: '#10B981',
+              borderRadius: '999px',
+              padding: '4px 12px',
+              fontSize: '11px',
+              fontWeight: 900,
+              color: '#FFF'
+            }}>
+              ✓ Complete
+            </div>
+          )}
+        </div>
+
+        {/* Progress Bar */}
+        <div style={{ width: '100%', height: '6px', background: 'rgba(255,255,255,0.1)' }}>
+          <div style={{
+            height: '100%',
+            width: `${((5 - secondsLeft) / 5) * 100}%`,
+            background: isCompleted ? '#10B981' : 'linear-gradient(90deg, #6366F1, #FFD54F)',
+            transition: 'width 1s linear'
+          }} />
+        </div>
+
+        {/* Modal Action Footer */}
+        <div style={{ padding: '20px', width: '100%', display: 'flex', flexDirection: 'column', gap: '10px', alignItems: 'center' }}>
+          {isCompleted ? (
+            <button
+              onClick={handleClaim}
+              style={{
+                width: '100%',
+                background: 'linear-gradient(135deg, #10B981, #059669)',
+                color: '#FFF',
+                border: '2px solid #34D399',
+                borderRadius: '20px',
+                padding: '14px',
+                fontSize: '16px',
+                fontWeight: 900,
+                cursor: 'pointer',
+                boxShadow: '0 8px 24px rgba(16,185,129,0.5)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '8px'
+              }}
+              type="button"
+            >
+              <span>🪙 CLAIM +50 BONUS COINS!</span>
+            </button>
+          ) : (
+            <button
+              disabled
+              style={{
+                width: '100%',
+                background: 'rgba(255,255,255,0.1)',
+                color: 'rgba(255,255,255,0.4)',
+                border: '1px solid rgba(255,255,255,0.2)',
+                borderRadius: '20px',
+                padding: '14px',
+                fontSize: '14px',
+                fontWeight: 800,
+                cursor: 'not-allowed',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '8px'
+              }}
+              type="button"
+            >
+              <span>Watching Ad... ({secondsLeft}s)</span>
+            </button>
+          )}
+
+          <button
+            onClick={onClose}
+            style={{
+              background: 'transparent',
+              color: 'rgba(255,255,255,0.5)',
+              border: 'none',
+              fontSize: '12px',
+              fontWeight: 700,
+              cursor: 'pointer',
+              textDecoration: 'underline'
+            }}
+            type="button"
+          >
+            Close Ad
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function WebInterstitialAdModal({ type = 'finish', onClose, onAction }) {
+  const isLoss = type === 'loss';
+
+  const handleFinish = () => {
+    if (onAction) onAction();
+    onClose();
+  };
+
+  return (
+    <div style={{
+      position: 'fixed',
+      inset: 0,
+      background: 'rgba(0,0,0,0.88)',
+      backdropFilter: 'blur(14px)',
+      zIndex: 999999,
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: '20px'
+    }}>
+      <div style={{
+        width: '100%',
+        maxWidth: '380px',
+        background: isLoss
+          ? 'linear-gradient(180deg, #3B0764 0%, #18022B 100%)'
+          : 'linear-gradient(180deg, #064E3B 0%, #022C22 100%)',
+        border: isLoss ? '3px solid #C084FC' : '3px solid #34D399',
+        borderRadius: '28px',
+        overflow: 'hidden',
+        boxShadow: isLoss ? '0 20px 60px rgba(192,132,252,0.4)' : '0 20px 60px rgba(52,211,153,0.4)',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        textAlign: 'center'
+      }}>
+        {/* Header Badge */}
+        <div style={{
+          width: '100%',
+          padding: '12px 18px',
+          background: 'rgba(255,255,255,0.08)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          borderBottom: '1px solid rgba(255,255,255,0.1)'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <span style={{
+              background: isLoss ? '#F43F5E' : '#FFD54F',
+              color: isLoss ? '#FFF' : '#000',
+              fontSize: '10px',
+              fontWeight: 900,
+              padding: '2px 6px',
+              borderRadius: '4px'
+            }}>
+              {isLoss ? 'LEVEL FAILED AD' : 'LEVEL COMPLETE AD'}
+            </span>
+            <span style={{ fontSize: '11px', color: 'rgba(255,255,255,0.8)', fontWeight: 700 }}>
+              AdMob Interstitial
+            </span>
+          </div>
+          <button
+            onClick={handleFinish}
+            style={{
+              background: 'rgba(255,255,255,0.2)',
+              border: 'none',
+              borderRadius: '50%',
+              width: '26px',
+              height: '26px',
+              color: '#FFF',
+              fontSize: '14px',
+              fontWeight: 900,
+              cursor: 'pointer'
+            }}
+            type="button"
+          >
+            ✕
+          </button>
+        </div>
+
+        {/* Ad Graphic & Body */}
+        <div style={{ padding: '24px 20px 16px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>
+          <div style={{ fontSize: '68px', animation: 'bounce-idle 1.2s infinite' }}>
+            {isLoss ? '💔 🛡️ ✨' : '🏆 🌟 👑'}
+          </div>
+
+          <h3 style={{ fontSize: '22px', fontWeight: 900, color: '#FFF', margin: 0 }}>
+            {isLoss ? 'Don\'t Give Up, Explorer!' : 'Level Conquered!'}
+          </h3>
+
+          <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.85)', margin: 0, lineHeight: 1.4 }}>
+            {isLoss
+              ? 'Watch this short partner ad to get +1 Extra Heart & revive instantly!'
+              : 'Great job! Sponsored by WonderVerse Partner. Collect your bonus loot!'}
+          </p>
+
+          {/* Ad banner inside modal */}
+          <div style={{
+            width: '100%',
+            background: 'rgba(255,255,255,0.1)',
+            borderRadius: '18px',
+            padding: '12px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '12px',
+            border: '1px solid rgba(255,255,255,0.2)',
+            marginTop: '4px'
+          }}>
+            <span style={{ fontSize: '32px' }}>{isLoss ? '💖' : '🎁'}</span>
+            <div style={{ textAlign: 'left', flex: 1 }}>
+              <div style={{ fontSize: '13px', fontWeight: 900, color: '#FFD54F' }}>
+                {isLoss ? 'Instant Revive Offer' : 'Victory Bonus Box'}
+              </div>
+              <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.7)' }}>
+                {isLoss ? '+1 Heart + 20 Bonus Coins' : '+50 Coins & +10 XP Bonus'}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Footer Actions */}
+        <div style={{ padding: '0 20px 20px', width: '100%', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+          <button
+            onClick={handleFinish}
+            style={{
+              width: '100%',
+              background: isLoss
+                ? 'linear-gradient(135deg, #A855F7, #7E22CE)'
+                : 'linear-gradient(135deg, #10B981, #059669)',
+              color: '#FFF',
+              border: isLoss ? '2px solid #C084FC' : '2px solid #34D399',
+              borderRadius: '20px',
+              padding: '14px',
+              fontSize: '16px',
+              fontWeight: 900,
+              cursor: 'pointer',
+              boxShadow: '0 8px 24px rgba(0,0,0,0.3)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '8px'
+            }}
+            type="button"
+          >
+            <span>{isLoss ? '💖 REVIVE & TRY AGAIN (+1 Heart)' : '🚀 CONTINUE TO NEXT LEVEL'}</span>
+          </button>
+
+          <button
+            onClick={handleFinish}
+            style={{
+              background: 'transparent',
+              color: 'rgba(255,255,255,0.6)',
+              border: 'none',
+              fontSize: '12px',
+              fontWeight: 700,
+              cursor: 'pointer',
+              textDecoration: 'underline'
+            }}
+            type="button"
+          >
+            Skip Ad
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function App() {
   const [screen, setScreen] = useState('splash');
   const [player, setPlayer] = useState(null);
@@ -624,6 +1143,8 @@ function App() {
   const [activeKingdomId, setActiveKingdomId] = useState('word');
   const [selectedSectionIndex, setSelectedSectionIndex] = useState(0);
   const [showSplash, setShowSplash] = useState(true);
+  const [showAdModal, setShowAdModal] = useState(false);
+  const [interstitialAdState, setInterstitialAdState] = useState(null);
 
   // Initialize App from Backend API or LocalStorage (offline-first & persistent)
   useEffect(() => {
@@ -720,7 +1241,26 @@ function App() {
   const completeLesson = (coinsEarned, xpEarned, starsEarned) => {
     setPlayer((prev) => addRewards(prev, coinsEarned, xpEarned, starsEarned));
     playSuccessSound();
-    setScreen('map');
+    setInterstitialAdState({
+      type: 'finish',
+      onAction: () => setScreen('map')
+    });
+  };
+
+  const lastLossAdRef = React.useRef(0);
+  const triggerLossAd = (onRetry) => {
+    const now = Date.now();
+    if (now - lastLossAdRef.current > 15000) {
+      lastLossAdRef.current = now;
+      setInterstitialAdState({
+        type: 'loss',
+        onAction: () => {
+          if (onRetry) onRetry();
+        }
+      });
+    } else {
+      if (onRetry) onRetry();
+    }
   };
 
   const earnRewards = (coinsEarned, starsEarned) => {
@@ -755,60 +1295,82 @@ function App() {
       case 'avatar':
         return <AvatarScreen heroName={heroName} setHeroName={setHeroName} heroEmoji={heroEmoji} setHeroEmoji={setHeroEmoji} onStart={startAdventure} onBack={player?.hasCompletedOnboarding ? () => setScreen('map') : undefined} />;
       case 'map':
-        return <MapScreen player={player} kingdoms={KINGDOMS} onOpenKingdom={openKingdom} onOpenPet={() => setScreen('pet')} onOpenRewards={() => setScreen('rewards')} onOpenShop={() => setScreen('shop')} onOpenNursery={() => setScreen('nursery-hub')} onOpenProfile={() => setScreen('avatar')} />;
+        return <MapScreen player={player} kingdoms={KINGDOMS} onOpenKingdom={openKingdom} onOpenPet={() => setScreen('pet')} onOpenRewards={() => setScreen('rewards')} onOpenShop={() => setScreen('shop')} onOpenNursery={() => setScreen('nursery-hub')} onOpenProfile={() => setScreen('avatar')} onWatchRewarded={() => setShowAdModal(true)} />;
       case 'kdetail':
         return <KingdomDetailScreen kingdom={activeKingdom} sectionIndex={selectedSectionIndex} setSectionIndex={setSelectedSectionIndex} onBack={() => setScreen('map')} onStartLesson={(target) => setScreen(typeof target === 'string' ? target : 'lesson')} />;
       case 'lesson':
-        return <LessonScreen player={player} kingdom={activeKingdom} section={activeSection} onBack={() => setScreen('kdetail')} onComplete={completeLesson} />;
+        return <LessonScreen player={player} kingdom={activeKingdom} section={activeSection} onBack={() => setScreen('kdetail')} onComplete={completeLesson} onLoss={triggerLossAd} />;
       case 'phonics-tree-climber':
-        return <PhonicsTreeClimberGame player={player} onBack={() => setScreen('kdetail')} onEarn={earnRewards} />;
+        return <PhonicsTreeClimberGame player={player} onBack={() => setScreen('kdetail')} onEarn={earnRewards} onLoss={triggerLossAd} />;
       case 'math-defender':
-        return <MathDefenderGame player={player} onBack={() => setScreen('kdetail')} onComplete={completeLesson} onEarn={earnRewards} />;
+        return <MathDefenderGame player={player} onBack={() => setScreen('kdetail')} onComplete={completeLesson} onEarn={earnRewards} onLoss={triggerLossAd} />;
       case 'pet':
         return <PetScreen player={player} setPlayer={setPlayer} onBack={() => setScreen('map')} onFeed={feedPet} onPlay={playPet} />;
       case 'rewards':
-        return <RewardsScreen player={player} onBack={() => setScreen('map')} />;
+        return <RewardsScreen player={player} onBack={() => setScreen('map')} onWatchRewarded={() => setShowAdModal(true)} />;
       case 'shop':
         return <ShopScreen player={player} setPlayer={setPlayer} onBack={() => setScreen('map')} />;
       case 'nursery-hub':
         return <NurseryHub onBack={() => setScreen('map')} onOpenGame={setScreen} />;
       case 'alphabet-game':
-        return <AlphabetGame onBack={() => setScreen('nursery-hub')} onEarn={earnRewards} />;
+        return <AlphabetGame onBack={() => setScreen('nursery-hub')} onEarn={earnRewards} onComplete={completeLesson} onLoss={triggerLossAd} />;
       case 'animal-farm':
-        return <AnimalFarm onBack={() => setScreen('nursery-hub')} onEarn={earnRewards} />;
+        return <AnimalFarm onBack={() => setScreen('nursery-hub')} onEarn={earnRewards} onComplete={completeLesson} onLoss={triggerLossAd} />;
       case 'fruit-market':
-        return <FruitMarket onBack={() => setScreen('nursery-hub')} onEarn={earnRewards} />;
+        return <FruitMarket onBack={() => setScreen('nursery-hub')} onEarn={earnRewards} onComplete={completeLesson} onLoss={triggerLossAd} />;
       case 'memory-match':
-        return <MemoryMatch onBack={() => setScreen('nursery-hub')} onEarn={earnRewards} />;
+        return <MemoryMatch onBack={() => setScreen('nursery-hub')} onEarn={earnRewards} onComplete={completeLesson} onLoss={triggerLossAd} />;
       case 'starlight':
-        return <StarlightGame onBack={() => setScreen('nursery-hub')} onEarn={earnRewards} />;
+        return <StarlightGame onBack={() => setScreen('nursery-hub')} onEarn={earnRewards} onComplete={completeLesson} onLoss={triggerLossAd} />;
       case 'cauldron':
-        return <CauldronGame onBack={() => setScreen('nursery-hub')} onEarn={earnRewards} />;
+        return <CauldronGame onBack={() => setScreen('nursery-hub')} onEarn={earnRewards} onComplete={completeLesson} onLoss={triggerLossAd} />;
       case 'cloud-hopper':
-        return <CloudHopperGame onBack={() => setScreen('nursery-hub')} onEarn={earnRewards} />;
+        return <CloudHopperGame onBack={() => setScreen('nursery-hub')} onEarn={earnRewards} onComplete={completeLesson} onLoss={triggerLossAd} />;
       case 'rainbow-village':
-        return <RainbowVillageGame onBack={() => setScreen('nursery-hub')} onEarn={earnRewards} />;
+        return <RainbowVillageGame onBack={() => setScreen('nursery-hub')} onEarn={earnRewards} onComplete={completeLesson} onLoss={triggerLossAd} />;
       case 'wonder-bakery':
-        return <WonderBakeryGame onBack={() => setScreen('nursery-hub')} onEarn={earnRewards} />;
+        return <WonderBakeryGame onBack={() => setScreen('nursery-hub')} onEarn={earnRewards} onComplete={completeLesson} onLoss={triggerLossAd} />;
       case 'starlight-lesson':
-        return <StarlightGame onBack={() => setScreen('kdetail')} />;
+        return <StarlightGame onBack={() => setScreen('kdetail')} onComplete={completeLesson} onLoss={triggerLossAd} />;
       case 'asteroid-blaster':
-        return <AsteroidBlasterGame player={player} onComplete={completeLesson} onBack={() => setScreen('kdetail')} />;
+        return <AsteroidBlasterGame player={player} onComplete={completeLesson} onLoss={triggerLossAd} onBack={() => setScreen('kdetail')} />;
       case 'deep-sea-diver':
-        return <DeepSeaDiverGame player={player} onComplete={completeLesson} onBack={() => setScreen('kdetail')} />;
+        return <DeepSeaDiverGame player={player} onComplete={completeLesson} onLoss={triggerLossAd} onBack={() => setScreen('kdetail')} />;
       case 'word-dino-jumper':
       case 'dino-jumper':
-        return <DinoJumperGame player={player} isWordForest={true} onComplete={completeLesson} onBack={() => setScreen('kdetail')} />;
+        return <DinoJumperGame player={player} isWordForest={true} onComplete={completeLesson} onLoss={triggerLossAd} onBack={() => setScreen('kdetail')} />;
       case 'dino-jumper-history':
-        return <DinoJumperGame player={player} isWordForest={false} onComplete={completeLesson} onBack={() => setScreen('kdetail')} />;
+        return <DinoJumperGame player={player} isWordForest={false} onComplete={completeLesson} onLoss={triggerLossAd} onBack={() => setScreen('kdetail')} />;
       case 'melody-maker':
-        return <MelodyMakerGame player={player} onComplete={completeLesson} onBack={() => setScreen('kdetail')} />;
+        return <MelodyMakerGame player={player} onComplete={completeLesson} onLoss={triggerLossAd} onBack={() => setScreen('kdetail')} />;
       default:
         return <SplashScreen />;
     }
   };
 
-  return <div className="phone">{renderScreen()}</div>;
+  return (
+    <div className="phone">
+      {renderScreen()}
+      {(screen === 'map' || screen === 'rewards') && (
+        <WebAdBanner onWatchRewarded={() => setShowAdModal(true)} />
+      )}
+      {showAdModal && (
+        <WebRewardedAdModal
+          onClose={() => setShowAdModal(false)}
+          onRewardClaimed={(amount) => earnRewards(amount, 0)}
+        />
+      )}
+      {interstitialAdState && (
+        <WebInterstitialAdModal
+          type={interstitialAdState.type}
+          onClose={() => setInterstitialAdState(null)}
+          onAction={() => {
+            if (interstitialAdState.onAction) interstitialAdState.onAction();
+          }}
+        />
+      )}
+    </div>
+  );
 }
 
 function SplashScreen() {
@@ -1256,7 +1818,7 @@ function getKingdomVisuals(kingdom) {
   }
 }
 
-function MapScreen({ player, kingdoms, onOpenKingdom, onOpenPet, onOpenRewards, onOpenShop, onOpenNursery, onOpenProfile }) {
+function MapScreen({ player, kingdoms, onOpenKingdom, onOpenPet, onOpenRewards, onOpenShop, onOpenNursery, onOpenProfile, onWatchRewarded }) {
   // Generate some floating background orbs for the mesh effect
   const orbs = React.useMemo(() => {
     return Array.from({ length: 4 }).map((_, i) => ({
@@ -1489,6 +2051,9 @@ function MapScreen({ player, kingdoms, onOpenKingdom, onOpenPet, onOpenRewards, 
             );
           })}
         </div>
+
+        {/* AdMob Banner Ad */}
+        <WebAdBanner onWatchRewarded={onWatchRewarded} />
       </div>
     </div>
   );
@@ -2397,7 +2962,7 @@ function KingdomActionStage({ kingdom, question, selectedOption, showResult, pla
   return null;
 }
 
-function LessonScreen({ player, kingdom, section, onBack, onComplete }) {
+function LessonScreen({ player, kingdom, section, onBack, onComplete, onLoss }) {
   const [questionIndex, setQuestionIndex] = useState(0);
   const [selectedOption, setSelectedOption] = useState(null);
   const [showResult, setShowResult] = useState(false);
@@ -2697,12 +3262,18 @@ function LessonScreen({ player, kingdom, section, onBack, onComplete }) {
       {showReward && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(26,19,37,0.85)', backdropFilter: 'blur(10px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100, padding: '24px' }}>
           <div style={{ background: 'linear-gradient(180deg, #FFFFFF 0%, #F4F7FC 100%)', borderRadius: '40px', padding: '40px 32px', textAlign: 'center', width: '100%', maxWidth: '400px', boxShadow: '0 32px 64px rgba(0,0,0,0.4)', animation: 'pop-in 0.5s cubic-bezier(0.34, 1.56, 0.64, 1)' }}>
-            <div style={{ fontSize: '80px', filter: 'drop-shadow(0 12px 24px rgba(0,0,0,0.2))', animation: 'sway-wobble 3s infinite alternate ease-in-out', marginBottom: '16px' }}>🎉</div>
-            <h2 style={{ fontSize: '32px', fontWeight: 900, color: '#2E2140', margin: '0 0 8px' }}>Quest Complete!</h2>
-            <p style={{ fontSize: '16px', fontWeight: 600, color: '#8A91A8', margin: '0 0 32px' }}>You conquered {section.title}!</p>
+            <div style={{ fontSize: '80px', filter: 'drop-shadow(0 12px 24px rgba(0,0,0,0.2))', animation: 'sway-wobble 3s infinite alternate ease-in-out', marginBottom: '16px' }}>
+              {correctCount >= Math.ceil(total / 2) ? '🎉' : '💔'}
+            </div>
+            <h2 style={{ fontSize: '32px', fontWeight: 900, color: '#2E2140', margin: '0 0 8px' }}>
+              {correctCount >= Math.ceil(total / 2) ? 'Quest Complete!' : 'Quest Failed!'}
+            </h2>
+            <p style={{ fontSize: '16px', fontWeight: 600, color: '#8A91A8', margin: '0 0 32px' }}>
+              {correctCount >= Math.ceil(total / 2) ? `You conquered ${section.title}!` : `Keep practicing ${section.title}!`}
+            </p>
 
             <div style={{ background: '#fff', borderRadius: '24px', padding: '24px', boxShadow: '0 8px 24px rgba(31,42,78,0.06)', marginBottom: '32px' }}>
-              <div style={{ fontSize: '14px', fontWeight: 800, color: '#A0A5BA', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '16px' }}>Your Rewards</div>
+              <div style={{ fontSize: '14px', fontWeight: 800, color: '#A0A5BA', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '16px' }}>Your Score: {correctCount}/{total}</div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                 <div style={{ background: 'linear-gradient(135deg, rgba(255,213,79,0.1), rgba(255,213,79,0.2))', borderRadius: '16px', padding: '16px', display: 'flex', flexDirection: 'column', alignItems: 'center', border: '1px solid rgba(255,213,79,0.3)' }}>
                   <span style={{ fontSize: '32px', filter: 'drop-shadow(0 4px 8px rgba(0,0,0,0.15))' }}>🪙</span>
@@ -2715,13 +3286,50 @@ function LessonScreen({ player, kingdom, section, onBack, onComplete }) {
               </div>
             </div>
 
-            <button
-              onClick={() => onComplete(coinsEarned, xpEarned, correctCount)}
-              style={{ width: '100%', background: kingdom.color, color: '#fff', border: 'none', borderRadius: '24px', padding: '20px', fontSize: '18px', fontWeight: 900, cursor: 'pointer', boxShadow: `0 12px 24px ${hexToRgba(kingdom.color, 0.4)}`, textTransform: 'uppercase', letterSpacing: '0.05em' }}
-              type="button"
-            >
-              Continue Journey
-            </button>
+            {correctCount >= Math.ceil(total / 2) ? (
+              <button
+                onClick={() => onComplete(coinsEarned, xpEarned, correctCount)}
+                style={{ width: '100%', background: kingdom.color, color: '#fff', border: 'none', borderRadius: '24px', padding: '20px', fontSize: '18px', fontWeight: 900, cursor: 'pointer', boxShadow: `0 12px 24px ${hexToRgba(kingdom.color, 0.4)}`, textTransform: 'uppercase', letterSpacing: '0.05em' }}
+                type="button"
+              >
+                Continue Journey
+              </button>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', width: '100%' }}>
+                <button
+                  onClick={() => {
+                    if (onLoss) {
+                      onLoss(() => {
+                        setQuestionIndex(0);
+                        setCorrectCount(0);
+                        setShowReward(false);
+                      });
+                    } else {
+                      setQuestionIndex(0);
+                      setCorrectCount(0);
+                      setShowReward(false);
+                    }
+                  }}
+                  style={{ width: '100%', background: 'linear-gradient(135deg, #EC4899, #8B5CF6)', color: '#fff', border: 'none', borderRadius: '24px', padding: '18px', fontSize: '16px', fontWeight: 900, cursor: 'pointer', boxShadow: '0 12px 24px rgba(236,72,153,0.4)', textTransform: 'uppercase' }}
+                  type="button"
+                >
+                  💖 Revive & Retry (+1 Ad)
+                </button>
+                <button
+                  onClick={() => {
+                    if (onLoss) {
+                      onLoss(() => onComplete(coinsEarned, xpEarned, correctCount));
+                    } else {
+                      onComplete(coinsEarned, xpEarned, correctCount);
+                    }
+                  }}
+                  style={{ width: '100%', background: 'transparent', color: '#8A91A8', border: 'none', fontSize: '14px', fontWeight: 700, cursor: 'pointer', textDecoration: 'underline' }}
+                  type="button"
+                >
+                  Return to Kingdom
+                </button>
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -3116,7 +3724,7 @@ function PetScreen({ player, setPlayer, onBack, onFeed, onPlay }) {
     </div>
   );
 }
-function RewardsScreen({ player, onBack }) {
+function RewardsScreen({ player, onBack, onWatchRewarded }) {
   const [openedChest, setOpenedChest] = useState(false);
   const [claimedStreak, setClaimedStreak] = useState(false);
   const [chestReward, setChestReward] = useState(null);
@@ -3232,6 +3840,49 @@ function RewardsScreen({ player, onBack }) {
               <span style={{ color: '#FF8A65' }}>🔥 {player?.streakDays || 3}-Day Streak</span>
             </div>
           </div>
+        </div>
+
+        {/* Watch Rewarded Video Ad Card */}
+        <div style={{
+          background: 'linear-gradient(135deg, #0284C7 0%, #0369A1 100%)',
+          borderRadius: '22px',
+          padding: '16px',
+          border: '2px solid #38BDF8',
+          boxShadow: '0 8px 24px rgba(2,132,199,0.4)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: '12px'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <div style={{ fontSize: '32px', background: 'rgba(255,255,255,0.2)', borderRadius: '16px', width: '48px', height: '48px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              🎬
+            </div>
+            <div>
+              <div style={{ fontSize: '15px', fontWeight: 900, color: '#FFF' }}>Watch Video Ad</div>
+              <div style={{ fontSize: '12px', color: '#E0F2FE', fontWeight: 700 }}>Earn +50 Bonus Coins Instantly!</div>
+            </div>
+          </div>
+          <button
+            onClick={() => {
+              if (onWatchRewarded) onWatchRewarded();
+            }}
+            style={{
+              background: 'linear-gradient(135deg, #FFD54F, #FF8E53)',
+              border: 'none',
+              borderRadius: '16px',
+              padding: '10px 18px',
+              fontSize: '13px',
+              fontWeight: 900,
+              color: '#000',
+              cursor: 'pointer',
+              boxShadow: '0 4px 14px rgba(255,213,79,0.5)',
+              whiteSpace: 'nowrap'
+            }}
+            type="button"
+          >
+            Watch 🪙
+          </button>
         </div>
 
         {/* 7-Day Streak Rewards Track */}
@@ -5689,7 +6340,7 @@ const HOPPER_LEVELS = [
   { name: 'Level 10 • Sky Citadel Master 🏆', sequence: ['10', '20', '30', '40', '50', '100 ⭐'], distractors: ['15', '25', '35', '45', '55'] }
 ];
 
-function CloudHopperGame({ onBack, onEarn }) {
+function CloudHopperGame({ onBack, onEarn, onComplete }) {
   const [level, setLevel] = useState(() => {
     try {
       const saved = localStorage.getItem('cloud_stairs_saved_level');
@@ -6017,7 +6668,10 @@ function CloudHopperGame({ onBack, onEarn }) {
             Mastered Level {level + 1}: {current.name}!
           </p>
           <button
-            onClick={handleNextLevel}
+            onClick={() => {
+              if (onComplete) onComplete(100, 50, 1);
+              handleNextLevel();
+            }}
             style={{
               background: 'linear-gradient(135deg, #FFD54F, #FF923C)',
               border: 'none',
@@ -6040,187 +6694,757 @@ function CloudHopperGame({ onBack, onEarn }) {
   );
 }
 
-function MathDefenderGame({ player, onBack, onComplete, onEarn }) {
-  const [gameState, setGameState] = useState('intro');
+function MathDefenderGame({ player, onBack, onComplete, onEarn, onLoss }) {
+  const [gameState, setGameState] = useState('intro'); // 'intro', 'playing', 'gameover', 'victory'
+  const [difficulty, setDifficulty] = useState('normal'); // 'easy', 'normal', 'hard'
   const [health, setHealth] = useState(3);
+  const [maxHealth, setMaxHealth] = useState(3);
   const [score, setScore] = useState(0);
-  const scoreRef = useRef(0);
-  useEffect(() => { scoreRef.current = score; }, [score]);
   const [level, setLevel] = useState(1);
-  const [enemyY, setEnemyY] = useState(0);
-  const [enemyLane, setEnemyLane] = useState(1); // 0, 1, 2
-  const [currentProblem, setCurrentProblem] = useState(null);
+  const [mana, setMana] = useState(50);
+  const [combo, setCombo] = useState(0);
+  const [maxCombo, setMaxCombo] = useState(0);
   const [shaking, setShaking] = useState(false);
-  const [boltFiring, setBoltFiring] = useState(false);
-  const [explosion, setExplosion] = useState(false);
-  const [enemyEmoji, setEnemyEmoji] = useState('🐉');
+  const [screenFlash, setScreenFlash] = useState(null); // 'freeze', 'heal', 'zap', 'damage'
+  const [heroAngle, setHeroAngle] = useState(0); // -25deg, 0deg, 25deg for lane targeting
+  const [isCasting, setIsCasting] = useState(false);
+  const [floatingTexts, setFloatingTexts] = useState([]); // [{ id, text, x, y, color }]
 
-  const EMOJIS = ['🐉', '🦇', '👾', '🕷️', '🧟', '🐺', '🦂'];
-  const LANES = ['22%', '50%', '78%']; // Move lanes closer to the middle to prevent edge clipping
+  // Stats tracking
+  const [stats, setStats] = useState({ total: 0, correct: 0, wrong: 0, spellsUsed: 0 });
 
-  const generateProblem = () => {
-    let ops = ['+', '-'];
-    if (level >= 3) ops.push('*');
-    if (level >= 5) ops = ['-', '*'];
-    if (level >= 6) ops.push('/');
-    if (level >= 8) ops = ['*', '/', '-'];
+  // Enemies state: list of active monsters
+  const [enemies, setEnemies] = useState([]);
+  const [selectedEnemyId, setSelectedEnemyId] = useState(null);
+  const [bolts, setBolts] = useState([]); // active laser bolts [{ id, startX, startY, endX, endY, color }]
+  const [explosions, setExplosions] = useState([]); // [{ id, x, y, emoji }]
+
+  const LANES = [20, 50, 80]; // percentage positions for lanes 0, 1, 2
+  const EMOJI_TYPES = {
+    goblin: ['🧟', '👺', '🕷️', '🦂'],
+    bat: ['🦇', '🐺', '🦅'],
+    dragon: ['🐉', '👾', '👹'],
+    boss: ['👑🐉', '👹🔥', '👾⚡']
+  };
+
+  // High score persistence
+  const [highScore, setHighScore] = useState(() => {
+    try {
+      return parseInt(localStorage.getItem('math_defender_highscore') || '0', 10);
+    } catch (e) {
+      return 0;
+    }
+  });
+
+  // Web Audio Synth Generator for rich sound effects
+  const playSynthSFX = (type) => {
+    try {
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      if (!AudioCtx) return;
+      const ctx = new AudioCtx();
+
+      if (type === 'cast') {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(300, ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(800, ctx.currentTime + 0.15);
+        gain.gain.setValueAtTime(0.3, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.15);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start();
+        osc.stop(ctx.currentTime + 0.15);
+      } else if (type === 'hit') {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(150, ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(40, ctx.currentTime + 0.2);
+        gain.gain.setValueAtTime(0.4, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.2);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start();
+        osc.stop(ctx.currentTime + 0.2);
+      } else if (type === 'combo') {
+        const notes = [523.25, 659.25, 783.99, 1046.50]; // C5, E5, G5, C6
+        notes.forEach((freq, idx) => {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(freq, ctx.currentTime + idx * 0.05);
+          gain.gain.setValueAtTime(0.2, ctx.currentTime + idx * 0.05);
+          gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + idx * 0.05 + 0.15);
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start(ctx.currentTime + idx * 0.05);
+          osc.stop(ctx.currentTime + idx * 0.05 + 0.15);
+        });
+      } else if (type === 'wrong') {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(250, ctx.currentTime);
+        osc.frequency.linearRampToValueAtTime(80, ctx.currentTime + 0.25);
+        gain.gain.setValueAtTime(0.3, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.25);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start();
+        osc.stop(ctx.currentTime + 0.25);
+      } else if (type === 'freeze') {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(900, ctx.currentTime);
+        osc.frequency.linearRampToValueAtTime(1400, ctx.currentTime + 0.3);
+        gain.gain.setValueAtTime(0.25, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start();
+        osc.stop(ctx.currentTime + 0.3);
+      } else if (type === 'shield') {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'square';
+        osc.frequency.setValueAtTime(220, ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(440, ctx.currentTime + 0.25);
+        gain.gain.setValueAtTime(0.2, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.25);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start();
+        osc.stop(ctx.currentTime + 0.25);
+      } else if (type === 'zap') {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(1200, ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(300, ctx.currentTime + 0.2);
+        gain.gain.setValueAtTime(0.3, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.2);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start();
+        osc.stop(ctx.currentTime + 0.2);
+      } else if (type === 'victory') {
+        const chord = [523.25, 659.25, 783.99, 1046.50, 1318.51];
+        chord.forEach((freq, i) => {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(freq, ctx.currentTime + i * 0.08);
+          gain.gain.setValueAtTime(0.3, ctx.currentTime + i * 0.08);
+          gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + i * 0.08 + 0.4);
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start(ctx.currentTime + i * 0.08);
+          osc.stop(ctx.currentTime + i * 0.08 + 0.4);
+        });
+      }
+    } catch (e) {
+      // Audio fallback
+    }
+  };
+
+  // Generate dynamic math problem according to level & difficulty
+  const createMathProblem = (lvl) => {
+    let ops = ['+'];
+    if (lvl >= 2) ops.push('-');
+    if (lvl >= 3) ops.push('*');
+    if (lvl >= 5) ops.push('/');
+
+    if (difficulty === 'hard') {
+      if (lvl >= 2) ops.push('*');
+      if (lvl >= 4) ops.push('/');
+    }
 
     const op = ops[Math.floor(Math.random() * ops.length)];
     let a, b, ans;
+
+    const diffMult = difficulty === 'easy' ? 0.7 : difficulty === 'hard' ? 1.4 : 1.0;
+
     if (op === '+') {
-      a = Math.floor(Math.random() * (10 + level * 2)) + 1;
-      b = Math.floor(Math.random() * (10 + level * 2)) + 1;
+      a = Math.floor(Math.random() * Math.max(8, (8 + lvl * 3) * diffMult)) + 1;
+      b = Math.floor(Math.random() * Math.max(8, (8 + lvl * 3) * diffMult)) + 1;
       ans = a + b;
     } else if (op === '-') {
-      a = Math.floor(Math.random() * (10 + level * 2)) + 5;
-      b = Math.floor(Math.random() * a);
+      a = Math.floor(Math.random() * Math.max(10, (10 + lvl * 3) * diffMult)) + 5;
+      b = Math.floor(Math.random() * (a - 1)) + 1;
       ans = a - b;
     } else if (op === '*') {
-      a = Math.floor(Math.random() * (4 + Math.floor(level / 2))) + 2;
-      b = Math.floor(Math.random() * 9) + 2;
+      a = Math.floor(Math.random() * Math.max(3, (3 + Math.floor(lvl / 2)) * diffMult)) + 2;
+      b = Math.floor(Math.random() * Math.max(5, (6 + Math.floor(lvl / 2)) * diffMult)) + 2;
       ans = a * b;
     } else if (op === '/') {
-      ans = Math.floor(Math.random() * 9) + 2; // Answer 2-10
-      b = Math.floor(Math.random() * (4 + Math.floor(level / 2))) + 2; // Divisor
-      a = ans * b; // Dividend
+      ans = Math.floor(Math.random() * Math.max(4, (4 + Math.floor(lvl / 2)) * diffMult)) + 2;
+      b = Math.floor(Math.random() * Math.max(3, (3 + Math.floor(lvl / 3)) * diffMult)) + 2;
+      a = ans * b;
     }
+
+    // Generate 3 clever distractors
     const options = [ans];
     while (options.length < 4) {
-      const wrong = ans + Math.floor(Math.random() * 7) - 3;
-      if (wrong !== ans && wrong >= 0 && !options.includes(wrong)) {
+      let delta = Math.floor(Math.random() * 7) - 3;
+      if (delta === 0) delta = Math.random() > 0.5 ? 1 : -1;
+      const wrong = ans + delta;
+      if (wrong >= 0 && !options.includes(wrong)) {
         options.push(wrong);
       }
     }
     options.sort(() => Math.random() - 0.5);
-    setCurrentProblem({ q: `${a} ${op} ${b}`, ans, options });
-    setEnemyY(0);
-    setEnemyLane(Math.floor(Math.random() * 3));
-    setEnemyEmoji(EMOJIS[Math.floor(Math.random() * EMOJIS.length)]);
+
+    return { q: `${a} ${op === '*' ? '×' : op === '/' ? '÷' : op} ${b}`, ans, options };
   };
 
-  useEffect(() => {
-    if (gameState === 'playing' && !currentProblem) {
-      generateProblem();
-    }
-  }, [gameState]);
+  // Spawn new monster
+  const spawnMonster = (lvl) => {
+    const lane = Math.floor(Math.random() * 3);
+    let type = 'goblin';
+    let hp = 1;
 
+    // Boss levels
+    if (lvl % 5 === 0 && Math.random() > 0.3) {
+      type = 'boss';
+      hp = 3;
+    } else if (lvl >= 4 && Math.random() > 0.6) {
+      type = 'dragon';
+      hp = 2;
+    } else if (lvl >= 2 && Math.random() > 0.5) {
+      type = 'bat';
+      hp = 1;
+    }
+
+    const emojiList = EMOJI_TYPES[type];
+    const emoji = emojiList[Math.floor(Math.random() * emojiList.length)];
+    const problem = createMathProblem(lvl);
+
+    return {
+      id: Date.now() + Math.random(),
+      lane,
+      y: 0,
+      problem,
+      type,
+      hp,
+      maxHp: hp,
+      emoji,
+      frozen: false,
+      speedMult: type === 'bat' ? 1.3 : type === 'dragon' ? 0.75 : type === 'boss' ? 0.6 : 1.0
+    };
+  };
+
+  // Add floating combat text
+  const addFloatingText = (text, x, y, color = '#FFD54F') => {
+    const id = Date.now() + Math.random();
+    setFloatingTexts(prev => [...prev, { id, text, x, y, color }]);
+    setTimeout(() => {
+      setFloatingTexts(prev => prev.filter(t => t.id !== id));
+    }, 1000);
+  };
+
+  // Trigger screen flash effect
+  const triggerFlash = (color) => {
+    setScreenFlash(color);
+    setTimeout(() => setScreenFlash(null), 300);
+  };
+
+  // Start new game
+  const startGame = () => {
+    setHealth(3);
+    setMaxHealth(3);
+    setScore(0);
+    setLevel(1);
+    setMana(50);
+    setCombo(0);
+    setMaxCombo(0);
+    setStats({ total: 0, correct: 0, wrong: 0, spellsUsed: 0 });
+    const initialMonster = spawnMonster(1);
+    setEnemies([initialMonster]);
+    setSelectedEnemyId(initialMonster.id);
+    setGameState('playing');
+  };
+
+  // Main game tick: update enemy positions & handle spawns
   useEffect(() => {
-    if (gameState !== 'playing' || boltFiring || explosion) return;
-    const speed = Math.max(10, 45 - level * 4 - (score % 5) * 1.5);
+    if (gameState !== 'playing') return;
+
+    const baseSpeed = Math.max(0.2, 0.45 + level * 0.06);
+    const tickInterval = 50; // ms
+
     const interval = setInterval(() => {
-      setEnemyY(prev => {
-        if (prev >= 75) { // Hit wall
+      setEnemies(prevEnemies => {
+        let reachedWall = false;
+        const nextEnemies = prevEnemies.map(enemy => {
+          if (enemy.frozen) return enemy;
+          const newY = enemy.y + baseSpeed * enemy.speedMult;
+          if (newY >= 75) {
+            reachedWall = true;
+            return { ...enemy, y: 75, reached: true };
+          }
+          return { ...enemy, y: newY };
+        });
+
+        if (reachedWall) {
+          playSynthSFX('wrong');
           setHealth(h => {
-            const newH = h - 1;
-            if (newH <= 0) setGameState('gameover');
-            return newH;
+            const nextH = h - 1;
+            if (nextH <= 0) {
+              setGameState('gameover');
+            }
+            return nextH;
           });
           setShaking(true);
+          triggerFlash('rgba(255, 92, 92, 0.3)');
           setTimeout(() => setShaking(false), 500);
-          generateProblem();
-          return 0;
-        }
-        return prev + 1;
-      });
-    }, speed);
-    return () => clearInterval(interval);
-  }, [gameState, score, boltFiring, explosion]);
 
-  const handleAnswer = (opt) => {
-    if (gameState !== 'playing' || boltFiring || explosion) return;
-    if (opt === currentProblem.ans) {
-      if (typeof playSuccessSound === 'function') playSuccessSound();
-      setBoltFiring(true);
-      setTimeout(() => {
-        setBoltFiring(false);
-        setExplosion(true);
-        if (typeof onEarn === 'function') onEarn(5, 0);
-        setTimeout(() => {
-          setExplosion(false);
-          const newScore = score + 1;
-          setScore(newScore);
-          if (newScore > 0 && newScore % 5 === 0) {
-            setLevel(l => {
-              const nextL = l + 1;
-              if (nextL > 10) {
-                setGameState('victory');
-              }
-              return nextL;
-            });
-            if (typeof onEarn === 'function') onEarn(0, 1);
+          // Filter out breached monsters & spawn replacements
+          const remaining = nextEnemies.filter(e => !e.reached);
+          if (remaining.length === 0) {
+            const fresh = spawnMonster(level);
+            setSelectedEnemyId(fresh.id);
+            return [fresh];
           }
-          generateProblem();
-        }, 300); // Explosion duration
-      }, 300); // Bolt duration
-    } else {
-      if (typeof playErrorSound === 'function') playErrorSound();
-      setHealth(h => {
-        const newH = h - 1;
-        if (newH <= 0) setGameState('gameover');
-        return newH;
+          setSelectedEnemyId(remaining[0].id);
+          return remaining;
+        }
+
+        return nextEnemies;
       });
+    }, tickInterval);
+
+    return () => clearInterval(interval);
+  }, [gameState, level]);
+
+  // Periodic monster spawner for horde feel at higher levels
+  useEffect(() => {
+    if (gameState !== 'playing') return;
+    const maxMonsters = Math.min(3, 1 + Math.floor(level / 3));
+
+    const spawnTimer = setInterval(() => {
+      setEnemies(prev => {
+        if (prev.length < maxMonsters) {
+          const newMonster = spawnMonster(level);
+          if (!selectedEnemyId) setSelectedEnemyId(newMonster.id);
+          return [...prev, newMonster];
+        }
+        return prev;
+      });
+    }, Math.max(3000, 7000 - level * 400));
+
+    return () => clearInterval(spawnTimer);
+  }, [gameState, level, selectedEnemyId]);
+
+  // Target active enemy (lowest enemy on screen)
+  const targetEnemy = enemies.find(e => e.id === selectedEnemyId) || enemies[0];
+
+  // Handle answer click or keypress
+  const handleAnswer = (chosenOpt) => {
+    if (gameState !== 'playing' || !targetEnemy) return;
+
+    setStats(s => ({ ...s, total: s.total + 1 }));
+
+    // Aim hero staff at target lane
+    const targetLaneIdx = targetEnemy.lane;
+    setHeroAngle(targetLaneIdx === 0 ? -25 : targetLaneIdx === 2 ? 25 : 0);
+    setIsCasting(true);
+    setTimeout(() => setIsCasting(false), 200);
+
+    if (chosenOpt === targetEnemy.problem.ans) {
+      // Correct Answer!
+      playSynthSFX('cast');
+
+      // Create magic bolt visual
+      const boltId = Date.now() + Math.random();
+      const startX = LANES[1]; // center castle top
+      const endX = LANES[targetEnemy.lane];
+      const endY = targetEnemy.y;
+
+      setBolts(prev => [...prev, { id: boltId, startX, endX, endY, color: '#B28DFF' }]);
+      setTimeout(() => {
+        setBolts(prev => prev.filter(b => b.id !== boltId));
+      }, 250);
+
+      // Hit effect after bolt hits
+      setTimeout(() => {
+        playSynthSFX('hit');
+        const explosionId = Date.now() + Math.random();
+        setExplosions(prev => [...prev, { id: explosionId, x: endX, y: endY, emoji: targetEnemy.emoji }]);
+        setTimeout(() => {
+          setExplosions(prev => prev.filter(ex => ex.id !== explosionId));
+        }, 300);
+
+        // Check if enemy has HP remaining (Boss/Dragon)
+        if (targetEnemy.hp > 1) {
+          addFloatingText('HIT! -1 HP', endX, endY, '#FF6B8B');
+          setEnemies(prev => prev.map(e => e.id === targetEnemy.id ? { ...e, hp: e.hp - 1, problem: createMathProblem(level) } : e));
+        } else {
+          // Defeated!
+          const newCombo = combo + 1;
+          setCombo(newCombo);
+          if (newCombo > maxCombo) setMaxCombo(newCombo);
+
+          const comboBonus = Math.floor(newCombo / 3) * 5;
+          const earnedScore = 10 + comboBonus;
+          const newScore = score + earnedScore;
+          setScore(newScore);
+
+          // Update High score
+          if (newScore > highScore) {
+            setHighScore(newScore);
+            try { localStorage.setItem('math_defender_highscore', newScore.toString()); } catch (e) {}
+          }
+
+          // Add mana
+          setMana(m => Math.min(100, m + 15 + newCombo * 2));
+          setStats(s => ({ ...s, correct: s.correct + 1 }));
+
+          if (newCombo > 2) {
+            playSynthSFX('combo');
+            addFloatingText(`COMBO x${newCombo}! +${earnedScore}`, endX, endY, '#FFD54F');
+          } else {
+            addFloatingText(`+${earnedScore} PTS`, endX, endY, '#6BFFB8');
+          }
+
+          if (typeof onEarn === 'function') onEarn(5, 0);
+
+          // Remove monster & progress level
+          setEnemies(prev => {
+            const nextList = prev.filter(e => e.id !== targetEnemy.id);
+            if (nextList.length === 0) {
+              const fresh = spawnMonster(level);
+              setSelectedEnemyId(fresh.id);
+              return [fresh];
+            }
+            setSelectedEnemyId(nextList[0].id);
+            return nextList;
+          });
+
+          // Level up check every 5 monsters
+          if ((stats.correct + 1) % 5 === 0) {
+            const nextLvl = level + 1;
+            if (nextLvl > 10) {
+              playSynthSFX('victory');
+              setGameState('victory');
+            } else {
+              setLevel(nextLvl);
+              addFloatingText(`LEVEL ${nextLvl} UNLOCKED!`, 50, 40, '#8A6BFF');
+              if (typeof onEarn === 'function') onEarn(0, 1);
+            }
+          }
+        }
+      }, 200);
+
+    } else {
+      // Wrong Answer!
+      playSynthSFX('wrong');
+      setCombo(0);
+      setStats(s => ({ ...s, wrong: s.wrong + 1 }));
       setShaking(true);
-      setTimeout(() => setShaking(false), 500);
+      addFloatingText('MISS!', LANES[targetEnemy.lane], targetEnemy.y, '#FF5C5C');
+      setTimeout(() => setShaking(false), 400);
     }
   };
 
-  const getHearts = () => {
+  // Keyboard shortcut listener (Keys 1-4 for options, Q, W, E for spells)
+  useEffect(() => {
+    if (gameState !== 'playing' || !targetEnemy) return;
+
+    const handleKeyDown = (e) => {
+      const options = targetEnemy.problem.options;
+      if (e.key === '1' && options[0] !== undefined) handleAnswer(options[0]);
+      else if (e.key === '2' && options[1] !== undefined) handleAnswer(options[1]);
+      else if (e.key === '3' && options[2] !== undefined) handleAnswer(options[2]);
+      else if (e.key === '4' && options[3] !== undefined) handleAnswer(options[3]);
+      else if (e.key.toLowerCase() === 'q') castSpell('freeze');
+      else if (e.key.toLowerCase() === 'w') castSpell('shield');
+      else if (e.key.toLowerCase() === 'e') castSpell('zap');
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [gameState, targetEnemy, mana]);
+
+  // Cast Power-up Spells
+  const castSpell = (spellType) => {
+    if (gameState !== 'playing') return;
+
+    if (spellType === 'freeze') {
+      if (mana < 30) { addFloatingText('NEED 30 MANA!', 50, 70, '#FF5C5C'); return; }
+      setMana(m => m - 30);
+      playSynthSFX('freeze');
+      triggerFlash('rgba(107, 220, 255, 0.3)');
+      setStats(s => ({ ...s, spellsUsed: s.spellsUsed + 1 }));
+      addFloatingText('❄️ FROST NOVA!', 50, 40, '#6BCBFF');
+
+      setEnemies(prev => prev.map(e => ({ ...e, frozen: true })));
+      setTimeout(() => {
+        setEnemies(prev => prev.map(e => ({ ...e, frozen: false })));
+      }, 4000);
+
+    } else if (spellType === 'shield') {
+      if (mana < 50) { addFloatingText('NEED 50 MANA!', 50, 70, '#FF5C5C'); return; }
+      setMana(m => m - 50);
+      playSynthSFX('shield');
+      triggerFlash('rgba(178, 141, 255, 0.3)');
+      setStats(s => ({ ...s, spellsUsed: s.spellsUsed + 1 }));
+      setHealth(h => Math.min(maxHealth, h + 1));
+      addFloatingText('🛡️ BARRIER HEAL +1 ❤️', 50, 70, '#B28DFF');
+
+    } else if (spellType === 'zap') {
+      if (mana < 40) { addFloatingText('NEED 40 MANA!', 50, 70, '#FF5C5C'); return; }
+      if (!targetEnemy) return;
+
+      setMana(m => m - 40);
+      playSynthSFX('zap');
+      triggerFlash('rgba(255, 213, 79, 0.3)');
+      setStats(s => ({ ...s, spellsUsed: s.spellsUsed + 1 }));
+      addFloatingText('⚡ CHAIN LIGHTNING!', LANES[targetEnemy.lane], targetEnemy.y, '#FFD54F');
+
+      // Auto solve target enemy
+      handleAnswer(targetEnemy.problem.ans);
+    }
+  };
+
+  // Hearts UI renderer
+  const renderHearts = () => {
     const hearts = [];
-    for (let i = 0; i < 3; i++) {
-      hearts.push(<span key={i} style={{ opacity: i < health ? 1 : 0.2, fontSize: '24px', filter: i < health ? 'drop-shadow(0 0 8px rgba(255,0,0,0.8))' : 'none' }}>❤️</span>);
+    for (let i = 0; i < maxHealth; i++) {
+      hearts.push(
+        <span key={i} style={{
+          opacity: i < health ? 1 : 0.25,
+          fontSize: '26px',
+          filter: i < health ? 'drop-shadow(0 0 10px rgba(255,50,50,0.8))' : 'none',
+          transition: 'all 0.3s'
+        }}>
+          ❤️
+        </span>
+      );
     }
     return hearts;
   };
 
   return (
-    <div className="screen active" style={{ background: 'radial-gradient(circle at top, #2C1B4D 0%, #0F0A20 100%)', color: '#fff', padding: 0, display: 'flex', flexDirection: 'column', position: 'absolute', overflow: 'hidden' }}>
+    <div className="screen active" style={{
+      background: 'radial-gradient(circle at top, #2C1B4D 0%, #0F0A20 100%)',
+      color: '#fff',
+      padding: 0,
+      display: 'flex',
+      flexDirection: 'column',
+      position: 'absolute',
+      overflow: 'hidden',
+      width: '100%',
+      height: '100%'
+    }}>
 
-      {/* Starry Sky Background */}
-      <div style={{ position: 'absolute', top: '10%', left: '20%', width: '4px', height: '4px', background: '#fff', borderRadius: '50%', boxShadow: '0 0 8px #fff' }} />
-      <div style={{ position: 'absolute', top: '25%', left: '80%', width: '3px', height: '3px', background: '#fff', borderRadius: '50%', boxShadow: '0 0 6px #fff' }} />
-      <div style={{ position: 'absolute', top: '40%', left: '15%', width: '5px', height: '5px', background: '#FFD54F', borderRadius: '50%', boxShadow: '0 0 10px #FFD54F' }} />
+      {/* Screen flash overlay for spells & damage */}
+      {screenFlash && (
+        <div style={{
+          position: 'absolute',
+          inset: 0,
+          background: screenFlash,
+          zIndex: 99,
+          pointerEvents: 'none',
+          transition: 'opacity 0.2s'
+        }} />
+      )}
 
-      {/* Castle Silhouette & Mountains */}
-      <div style={{ position: 'absolute', bottom: '25%', left: '50%', transform: 'translateX(-50%)', fontSize: '220px', opacity: 0.08, zIndex: 0, pointerEvents: 'none', filter: 'blur(2px)' }}>🏰</div>
-      <div style={{ position: 'absolute', bottom: '25%', left: '-20%', width: '70%', height: '200px', background: 'linear-gradient(180deg, rgba(74,91,112,0.2) 0%, transparent 100%)', borderRadius: '50% 50% 0 0', zIndex: 0, pointerEvents: 'none' }} />
-      <div style={{ position: 'absolute', bottom: '25%', right: '-30%', width: '90%', height: '280px', background: 'linear-gradient(180deg, rgba(59,73,92,0.15) 0%, transparent 100%)', borderRadius: '50% 50% 0 0', zIndex: 0, pointerEvents: 'none' }} />
+      {/* Starry Sky & Nebula */}
+      <div style={{ position: 'absolute', top: '8%', left: '15%', width: '4px', height: '4px', background: '#fff', borderRadius: '50%', boxShadow: '0 0 10px #fff' }} />
+      <div style={{ position: 'absolute', top: '22%', left: '82%', width: '3px', height: '3px', background: '#fff', borderRadius: '50%', boxShadow: '0 0 8px #fff' }} />
+      <div style={{ position: 'absolute', top: '35%', left: '25%', width: '5px', height: '5px', background: '#FFD54F', borderRadius: '50%', boxShadow: '0 0 12px #FFD54F' }} />
+
+      {/* Background Castle Silhouette */}
+      <div style={{ position: 'absolute', bottom: '25%', left: '50%', transform: 'translateX(-50%)', fontSize: '240px', opacity: 0.08, zIndex: 0, pointerEvents: 'none', filter: 'blur(2px)' }}>🏰</div>
 
       {/* Top Bar */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '20px', zIndex: 10 }}>
-        <button onClick={onBack} style={{ background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '16px', width: '44px', height: '44px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#fff', backdropFilter: 'blur(8px)' }} type="button">
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 20px', zIndex: 10, background: 'rgba(15,10,32,0.6)', backdropFilter: 'blur(10px)' }}>
+        <button onClick={onBack} style={{
+          background: 'rgba(255,255,255,0.12)',
+          border: '1px solid rgba(255,255,255,0.2)',
+          borderRadius: '16px',
+          width: '44px',
+          height: '44px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          cursor: 'pointer',
+          color: '#fff',
+          boxShadow: '0 4px 12px rgba(0,0,0,0.3)'
+        }} type="button">
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
         </button>
-        <div style={{ display: 'flex', gap: '8px' }}>
-          {getHearts()}
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+          {/* High score badge */}
+          <div style={{ background: 'rgba(255,213,79,0.15)', border: '1px solid rgba(255,213,79,0.4)', borderRadius: '20px', padding: '6px 14px', fontSize: '14px', fontWeight: 800, color: '#FFD54F', display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <span>🏆</span> {score} <span style={{ opacity: 0.6, fontSize: '11px' }}>({highScore})</span>
+          </div>
+
+          <div style={{ display: 'flex', gap: '6px' }}>
+            {renderHearts()}
+          </div>
         </div>
       </div>
 
+      {/* INTRO SCREEN */}
       {gameState === 'intro' && (
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '20px', textAlign: 'center', zIndex: 10 }}>
-          <div style={{ fontSize: '80px', marginBottom: '24px', filter: 'drop-shadow(0 0 32px rgba(138,107,255,0.6))' }}>🏰</div>
-          <h1 style={{ fontSize: '40px', fontWeight: 900, marginBottom: '16px', background: 'linear-gradient(180deg, #FFD54F 0%, #FF9E5E 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', filter: 'drop-shadow(0 4px 12px rgba(0,0,0,0.5))' }}>Math Defender</h1>
-          <p style={{ fontSize: '18px', color: '#C1C5D6', marginBottom: '48px', maxWidth: '80%', lineHeight: 1.4 }}>Solve ancient runic equations to defend the castle from the monster horde!</p>
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '24px', textAlign: 'center', zIndex: 10 }}>
+          <div style={{ fontSize: '90px', marginBottom: '16px', filter: 'drop-shadow(0 0 40px rgba(138,107,255,0.8))', animation: 'bounce-idle 2s infinite ease-in-out' }}>🧙‍♂️🏰</div>
+          <h1 style={{ fontSize: '42px', fontWeight: 900, marginBottom: '12px', background: 'linear-gradient(180deg, #FFD54F 0%, #FF9E5E 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', filter: 'drop-shadow(0 4px 12px rgba(0,0,0,0.5))' }}>Math Defender</h1>
+          <p style={{ fontSize: '16px', color: '#C1C5D6', marginBottom: '28px', maxWidth: '85%', lineHeight: 1.5 }}>
+            Cast magical equations to destroy advancing monster hordes! Unleash <b>Frost Nova</b>, <b>Aegis Shield</b> & <b>Chain Lightning</b> spells.
+          </p>
+
+          {/* Difficulty selector */}
+          <div style={{ display: 'flex', gap: '12px', marginBottom: '32px' }}>
+            {['easy', 'normal', 'hard'].map(d => (
+              <button
+                key={d}
+                onClick={() => setDifficulty(d)}
+                style={{
+                  background: difficulty === d ? 'linear-gradient(135deg, #8A6BFF, #6B4EE0)' : 'rgba(255,255,255,0.08)',
+                  border: difficulty === d ? '2px solid #FFD54F' : '1px solid rgba(255,255,255,0.2)',
+                  borderRadius: '16px',
+                  padding: '10px 20px',
+                  color: '#fff',
+                  fontWeight: 800,
+                  fontSize: '14px',
+                  cursor: 'pointer',
+                  textTransform: 'uppercase',
+                  boxShadow: difficulty === d ? '0 0 16px rgba(138,107,255,0.6)' : 'none'
+                }}
+                type="button"
+              >
+                {d === 'easy' ? '🟢 Easy' : d === 'normal' ? '🟡 Normal' : '🔴 Hard'}
+              </button>
+            ))}
+          </div>
+
           <button
-            onClick={() => setGameState('playing')}
-            style={{ background: 'linear-gradient(135deg, #8A6BFF, #6B4EE0)', border: '2px solid rgba(255,255,255,0.3)', borderRadius: '32px', padding: '20px 48px', fontSize: '22px', fontWeight: 900, color: '#fff', cursor: 'pointer', boxShadow: '0 12px 32px rgba(138,107,255,0.5), inset 0 2px 8px rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.1em' }}
+            onClick={startGame}
+            style={{
+              background: 'linear-gradient(135deg, #FF6B8B, #FF8E53)',
+              border: '2px solid rgba(255,255,255,0.4)',
+              borderRadius: '32px',
+              padding: '20px 56px',
+              fontSize: '24px',
+              fontWeight: 900,
+              color: '#fff',
+              cursor: 'pointer',
+              boxShadow: '0 12px 32px rgba(255,107,139,0.5), inset 0 2px 8px rgba(255,255,255,0.4)',
+              textTransform: 'uppercase',
+              letterSpacing: '0.08em',
+              transform: 'scale(1)',
+              transition: 'transform 0.2s'
+            }}
             type="button"
           >
-            Defend Castle
+            ⚔️ Defend Castle
           </button>
         </div>
       )}
 
+      {/* PLAYING SCREEN */}
       {gameState === 'playing' && (
         <>
-          <div style={{ position: 'absolute', top: '80px', left: '20px', right: '20px', display: 'flex', justifyContent: 'center', zIndex: 10 }}>
-            <div style={{ background: 'linear-gradient(90deg, #8A6BFF, #FF6B8B)', border: 'none', borderRadius: '999px', padding: '10px 32px', fontSize: '22px', fontWeight: 900, color: '#FFF', boxShadow: '0 8px 24px rgba(138,107,255,0.6), inset 0 2px 4px rgba(255,255,255,0.5)', textShadow: '0 2px 4px rgba(0,0,0,0.3)', letterSpacing: '0.05em' }}>Level {level}</div>
+          {/* Status Header Bar (Level, Mana & Combo) */}
+          <div style={{ padding: '0 20px 10px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', zIndex: 10 }}>
+            {/* Level Badge */}
+            <div style={{ background: 'linear-gradient(90deg, #8A6BFF, #FF6B8B)', borderRadius: '999px', padding: '6px 20px', fontSize: '16px', fontWeight: 900, color: '#FFF', boxShadow: '0 4px 16px rgba(138,107,255,0.5)' }}>
+              Level {level}
+            </div>
+
+            {/* Combo Meter */}
+            {combo > 1 && (
+              <div style={{ background: 'linear-gradient(90deg, #FFD54F, #FF9E5E)', borderRadius: '999px', padding: '6px 16px', fontSize: '15px', fontWeight: 900, color: '#1A0F2E', animation: 'bounce-idle 0.6s infinite alternate' }}>
+                🔥 COMBO x{combo}!
+              </div>
+            )}
+
+            {/* Mana Bar */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span style={{ fontSize: '14px', fontWeight: 900, color: '#6BCBFF' }}>⚡ MANA</span>
+              <div style={{ width: '100px', height: '14px', background: 'rgba(0,0,0,0.5)', borderRadius: '10px', overflow: 'hidden', border: '1px solid rgba(107,203,255,0.5)' }}>
+                <div style={{ width: `${mana}%`, height: '100%', background: 'linear-gradient(90deg, #00D2FF, #3A7BD5)', transition: 'width 0.3s' }} />
+              </div>
+            </div>
           </div>
 
-          {/* Game Area */}
-          <div style={{ flex: 1, position: 'relative', overflow: 'hidden', perspective: '800px' }}>
-            <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(circle at 50% 0%, #3B2A6B 0%, #1A1A3A 40%, #0B0B1A 100%)', zIndex: -2 }} />
+          {/* Spell Power-Up Bar (Q, W, E) */}
+          <div style={{ display: 'flex', justifyContent: 'center', gap: '12px', padding: '4px 20px 8px 20px', zIndex: 10 }}>
+            <button
+              onClick={() => castSpell('freeze')}
+              style={{
+                background: mana >= 30 ? 'linear-gradient(135deg, #00C6FF, #0072FF)' : 'rgba(255,255,255,0.08)',
+                border: '1px solid rgba(0,198,255,0.6)',
+                borderRadius: '16px',
+                padding: '8px 14px',
+                color: '#fff',
+                fontSize: '13px',
+                fontWeight: 800,
+                cursor: mana >= 30 ? 'pointer' : 'not-allowed',
+                opacity: mana >= 30 ? 1 : 0.4,
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                boxShadow: mana >= 30 ? '0 4px 12px rgba(0,198,255,0.4)' : 'none'
+              }}
+              type="button"
+            >
+              <span>❄️ Frost (30)</span> <span style={{ background: 'rgba(0,0,0,0.3)', padding: '2px 6px', borderRadius: '6px', fontSize: '10px' }}>[Q]</span>
+            </button>
 
-            {/* 3D Tilted Floor Grid */}
+            <button
+              onClick={() => castSpell('shield')}
+              style={{
+                background: mana >= 50 ? 'linear-gradient(135deg, #B28DFF, #8A6BFF)' : 'rgba(255,255,255,0.08)',
+                border: '1px solid rgba(178,141,255,0.6)',
+                borderRadius: '16px',
+                padding: '8px 14px',
+                color: '#fff',
+                fontSize: '13px',
+                fontWeight: 800,
+                cursor: mana >= 50 ? 'pointer' : 'not-allowed',
+                opacity: mana >= 50 ? 1 : 0.4,
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                boxShadow: mana >= 50 ? '0 4px 12px rgba(178,141,255,0.4)' : 'none'
+              }}
+              type="button"
+            >
+              <span>🛡️ Shield (50)</span> <span style={{ background: 'rgba(0,0,0,0.3)', padding: '2px 6px', borderRadius: '6px', fontSize: '10px' }}>[W]</span>
+            </button>
+
+            <button
+              onClick={() => castSpell('zap')}
+              style={{
+                background: mana >= 40 ? 'linear-gradient(135deg, #FFD54F, #FF9E5E)' : 'rgba(255,255,255,0.08)',
+                border: '1px solid rgba(255,213,79,0.6)',
+                borderRadius: '16px',
+                padding: '8px 14px',
+                color: mana >= 40 ? '#1A0F2E' : '#fff',
+                fontSize: '13px',
+                fontWeight: 800,
+                cursor: mana >= 40 ? 'pointer' : 'not-allowed',
+                opacity: mana >= 40 ? 1 : 0.4,
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                boxShadow: mana >= 40 ? '0 4px 12px rgba(255,213,79,0.4)' : 'none'
+              }}
+              type="button"
+            >
+              <span>⚡ Zap (40)</span> <span style={{ background: 'rgba(0,0,0,0.3)', color: '#fff', padding: '2px 6px', borderRadius: '6px', fontSize: '10px' }}>[E]</span>
+            </button>
+          </div>
+
+          {/* MAIN 3D BATTLEFIELD CANVAS AREA */}
+          <div style={{ flex: 1, position: 'relative', overflow: 'hidden', perspective: '800px' }}>
+            {/* Background 3D Floor & Grid */}
+            <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(circle at 50% 0%, #3B2A6B 0%, #1A1A3A 40%, #0B0B1A 100%)', zIndex: -2 }} />
             <div style={{
               position: 'absolute',
               bottom: '-20%',
@@ -6231,23 +7455,22 @@ function MathDefenderGame({ player, onBack, onComplete, onEarn }) {
               transform: 'rotateX(60deg)',
               transformOrigin: 'top center',
               zIndex: -1,
-              animation: 'pan-bg-3d 2s linear infinite',
               boxShadow: 'inset 0 100px 100px #0B0B1A'
             }} />
 
-            {/* Stars */}
-            <div style={{ position: 'absolute', inset: 0, opacity: 0.5, backgroundImage: 'radial-gradient(circle at 10% 20%, #FFF 1px, transparent 1px), radial-gradient(circle at 80% 40%, #FFF 1.5px, transparent 1px), radial-gradient(circle at 30% 70%, #FFF 2px, transparent 2px)', backgroundSize: '100px 100px, 150px 150px, 200px 200px', zIndex: -2 }} />
-            <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(circle at 20% 40%, rgba(255,107,180,0.15) 0%, transparent 40%), radial-gradient(circle at 80% 60%, rgba(107,255,200,0.1) 0%, transparent 50%)', zIndex: -2 }} />
-
-            {/* 3 Lanes Indicators (Tilted with floor) */}
-            <div style={{ position: 'absolute', top: '-20%', bottom: '-20%', left: '36%', width: '2px', background: 'linear-gradient(180deg, transparent, rgba(138,107,255,0.4), transparent)', transform: 'rotateX(60deg)', transformOrigin: 'top center', zIndex: -1 }} />
-            <div style={{ position: 'absolute', top: '-20%', bottom: '-20%', left: '64%', width: '2px', background: 'linear-gradient(180deg, transparent, rgba(138,107,255,0.4), transparent)', transform: 'rotateX(60deg)', transformOrigin: 'top center', zIndex: -1 }} />
+            {/* 3 Lane Marker Lines */}
+            <div style={{ position: 'absolute', top: 0, bottom: '25%', left: '33%', width: '2px', background: 'linear-gradient(180deg, transparent, rgba(138,107,255,0.3), transparent)', zIndex: 1 }} />
+            <div style={{ position: 'absolute', top: 0, bottom: '25%', left: '66%', width: '2px', background: 'linear-gradient(180deg, transparent, rgba(138,107,255,0.3), transparent)', zIndex: 1 }} />
 
             {/* Castle Wall at bottom */}
             <div style={{
-              position: 'absolute', bottom: '0', left: '0', right: '0', height: '25%',
+              position: 'absolute',
+              bottom: 0,
+              left: 0,
+              right: 0,
+              height: '24%',
               background: 'linear-gradient(180deg, #1A1A2A 0%, #0D0D15 100%)',
-              transform: shaking ? 'translateY(10px)' : 'translateY(0)',
+              transform: shaking ? 'translateY(8px)' : 'translateY(0)',
               transition: 'transform 0.05s',
               zIndex: 5,
               display: 'flex',
@@ -6255,119 +7478,232 @@ function MathDefenderGame({ player, onBack, onComplete, onEarn }) {
               alignItems: 'center',
               boxShadow: 'inset 0 10px 20px rgba(0,0,0,0.8)'
             }}>
+              {/* Barrier Line */}
+              <div style={{
+                width: '100%',
+                height: '4px',
+                background: '#B28DFF',
+                boxShadow: '0 0 25px 8px rgba(178,141,255,0.7), inset 0 0 10px #fff',
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                zIndex: 2
+              }} />
 
-
-              {/* Magical Brick Texture */}
-              <div style={{ position: 'absolute', inset: 0, background: 'repeating-linear-gradient(0deg, transparent, transparent 38px, rgba(138,107,255,0.4) 38px, rgba(138,107,255,0.4) 40px), repeating-linear-gradient(90deg, transparent, transparent 78px, rgba(138,107,255,0.4) 78px, rgba(138,107,255,0.4) 80px)' }} />
-              <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, rgba(138,107,255,0.2) 0%, transparent 100%)' }} />
-
-              {/* Magical Barrier Line */}
-              <div style={{ width: '100%', height: '4px', background: '#B28DFF', boxShadow: '0 0 25px 8px rgba(178,141,255,0.6), inset 0 0 10px #fff', position: 'absolute', top: 0, left: 0, zIndex: 2 }} />
+              {/* Hero Mage standing on castle wall */}
+              <div style={{
+                position: 'absolute',
+                top: '-55px',
+                left: '50%',
+                transform: `translateX(-50%) rotate(${heroAngle}deg)`,
+                transition: 'transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
+                fontSize: '52px',
+                zIndex: 6,
+                filter: isCasting ? 'drop-shadow(0 0 24px #B28DFF)' : 'drop-shadow(0 4px 12px rgba(0,0,0,0.5))'
+              }}>
+                🧙‍♂️
+              </div>
             </div>
 
-            {/* Falling Enemy */}
-            {currentProblem && !explosion && (
-              <div style={{
-                position: 'absolute',
-                top: `${enemyY}%`,
-                left: LANES[enemyLane],
-                transform: 'translateX(-50%)',
-                fontSize: '64px',
-                transition: 'bottom 0.05s linear',
-                filter: 'drop-shadow(0 12px 24px rgba(0,0,0,0.5))',
-                zIndex: 6,
-                display: 'flex', flexDirection: 'column', alignItems: 'center'
-              }}>
-                <div style={{ background: 'rgba(0,0,0,0.8)', padding: '6px 16px', borderRadius: '16px', fontSize: '28px', fontWeight: 900, color: '#fff', marginBottom: '12px', border: '2px solid #FF5C5C', boxShadow: '0 0 20px rgba(255,92,92,0.6)' }}>
-                  {currentProblem.q}
-                </div>
-                <div style={{ animation: 'bounce-idle 1s infinite alternate ease-in-out', filter: 'drop-shadow(0 0 15px rgba(255,92,92,0.8))' }}>
-                  {enemyEmoji}
-                </div>
-              </div>
-            )}
+            {/* ACTIVE ENEMIES */}
+            {enemies.map(enemy => {
+              const isSelected = enemy.id === targetEnemy?.id;
+              return (
+                <div
+                  key={enemy.id}
+                  onClick={() => setSelectedEnemyId(enemy.id)}
+                  style={{
+                    position: 'absolute',
+                    top: `${enemy.y}%`,
+                    left: `${LANES[enemy.lane]}%`,
+                    transform: 'translateX(-50%)',
+                    cursor: 'pointer',
+                    transition: 'top 0.05s linear',
+                    zIndex: isSelected ? 8 : 6,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center'
+                  }}
+                >
+                  {/* Math equation bubble above monster */}
+                  <div style={{
+                    background: isSelected ? 'linear-gradient(135deg, #1A0F2E, #2A1A4A)' : 'rgba(0,0,0,0.8)',
+                    padding: '8px 18px',
+                    borderRadius: '20px',
+                    fontSize: '26px',
+                    fontWeight: 900,
+                    color: isSelected ? '#FFD54F' : '#FFF',
+                    marginBottom: '8px',
+                    border: isSelected ? '3px solid #FFD54F' : '2px solid rgba(255,255,255,0.3)',
+                    boxShadow: isSelected ? '0 0 25px rgba(255,213,79,0.7)' : '0 4px 12px rgba(0,0,0,0.5)',
+                    whiteSpace: 'nowrap',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px'
+                  }}>
+                    {enemy.frozen && <span>❄️</span>}
+                    <span>{enemy.problem.q} = ?</span>
+                  </div>
 
-            {/* Explosion Effect */}
-            {explosion && (
-              <div style={{
-                position: 'absolute',
-                bottom: `${100 - enemyY}%`,
-                left: LANES[enemyLane],
-                transform: 'translateX(-50%)',
-                fontSize: '80px',
-                zIndex: 7,
-                animation: 'pop-in 0.3s ease-out'
-              }}>
+                  {/* HP Hearts bar for Boss / Armored enemies */}
+                  {enemy.maxHp > 1 && (
+                    <div style={{ display: 'flex', gap: '4px', marginBottom: '4px' }}>
+                      {Array.from({ length: enemy.maxHp }).map((_, i) => (
+                        <div key={i} style={{ width: '12px', height: '6px', borderRadius: '4px', background: i < enemy.hp ? '#FF5C5C' : 'rgba(255,255,255,0.2)' }} />
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Monster Sprite */}
+                  <div style={{
+                    fontSize: enemy.type === 'boss' ? '72px' : '54px',
+                    animation: enemy.frozen ? 'none' : 'bounce-idle 1s infinite alternate ease-in-out',
+                    filter: enemy.frozen
+                      ? 'drop-shadow(0 0 20px #00C6FF) hue-rotate(180deg)'
+                      : isSelected
+                        ? 'drop-shadow(0 0 20px rgba(255,92,92,0.9))'
+                        : 'drop-shadow(0 4px 12px rgba(0,0,0,0.5))'
+                  }}>
+                    {enemy.emoji}
+                  </div>
+                </div>
+              );
+            })}
+
+            {/* MAGIC BOLTS */}
+            {bolts.map(b => (
+              <div
+                key={b.id}
+                style={{
+                  position: 'absolute',
+                  bottom: '120px',
+                  left: `${b.startX}%`,
+                  width: '8px',
+                  height: '100%',
+                  background: `linear-gradient(0deg, ${b.color}, #FFF)`,
+                  boxShadow: `0 0 30px 10px ${b.color}`,
+                  transform: `translateX(-50%) rotate(${b.endX > b.startX ? 15 : b.endX < b.startX ? -15 : 0}deg)`,
+                  zIndex: 7,
+                  borderRadius: '999px',
+                  animation: 'bolt-shoot-new 0.25s ease-out forwards'
+                }}
+              />
+            ))}
+
+            {/* EXPLOSIONS */}
+            {explosions.map(ex => (
+              <div
+                key={ex.id}
+                style={{
+                  position: 'absolute',
+                  top: `${ex.y}%`,
+                  left: `${ex.x}%`,
+                  transform: 'translateX(-50%)',
+                  fontSize: '70px',
+                  zIndex: 9,
+                  animation: 'pop-in 0.3s ease-out'
+                }}
+              >
                 💥
               </div>
-            )}
+            ))}
 
-            {/* Magic Bolt Animation */}
-            {boltFiring && (
-              <div style={{
-                position: 'absolute',
-                bottom: '180px',
-                left: LANES[enemyLane],
-                width: '12px',
-                height: '400px',
-                background: 'linear-gradient(0deg, #B28DFF, #FFFFFF)',
-                boxShadow: '0 0 40px 15px rgba(178,141,255,0.8)',
-                transform: 'translateX(-50%)',
-                animation: 'bolt-shoot-new 0.3s ease-out forwards',
-                zIndex: 3,
-                borderRadius: '999px',
-                filter: 'brightness(1.5)'
-              }} />
-            )}
+            {/* FLOATING COMBAT TEXT */}
+            {floatingTexts.map(ft => (
+              <div
+                key={ft.id}
+                style={{
+                  position: 'absolute',
+                  top: `${ft.y}%`,
+                  left: `${ft.x}%`,
+                  transform: 'translateX(-50%)',
+                  fontSize: '22px',
+                  fontWeight: 900,
+                  color: ft.color,
+                  textShadow: '0 2px 8px rgba(0,0,0,0.8)',
+                  zIndex: 10,
+                  animation: 'float-up 1s ease-out forwards',
+                  pointerEvents: 'none'
+                }}
+              >
+                {ft.text}
+              </div>
+            ))}
 
             <style>{`
               @keyframes bolt-shoot-new {
-                0% { height: 0; bottom: 180px; opacity: 1; }
-                50% { height: ${80 - enemyY}vh; bottom: 180px; opacity: 1; }
-                100% { height: 0; bottom: ${80 - enemyY + 20}vh; opacity: 0; }
+                0% { height: 0; opacity: 1; }
+                100% { height: 400px; opacity: 0; }
               }
               @keyframes bounce-idle {
                 0% { transform: translateY(0); }
-                100% { transform: translateY(-15px); }
+                100% { transform: translateY(-12px); }
+              }
+              @keyframes float-up {
+                0% { opacity: 1; transform: translate(-50%, 0); }
+                100% { opacity: 0; transform: translate(-50%, -40px); }
+              }
+              @keyframes pop-in {
+                0% { transform: translate(-50%, 0) scale(0.3); opacity: 1; }
+                100% { transform: translate(-50%, 0) scale(1.4); opacity: 0; }
               }
             `}</style>
           </div>
 
-          {/* Runic Controls Area */}
-          <div style={{ padding: '24px', background: 'rgba(26,19,37,0.9)', backdropFilter: 'blur(20px)', borderTop: '2px solid rgba(255,255,255,0.1)', zIndex: 10 }}>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
-              {currentProblem?.options.map((opt, i) => (
+          {/* RUNIC SPELL CONTROLS (2x2 Answer Grid) */}
+          <div style={{
+            padding: '18px 20px 24px 20px',
+            background: 'rgba(26,19,37,0.95)',
+            backdropFilter: 'blur(20px)',
+            borderTop: '2px solid rgba(255,255,255,0.15)',
+            zIndex: 10
+          }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
+              {targetEnemy?.problem.options.map((opt, i) => (
                 <button
                   key={i}
                   onClick={() => handleAnswer(opt)}
                   style={{
                     background: 'linear-gradient(180deg, #4A3382 0%, #2A1A4A 100%)',
-                    border: '2px solid rgba(138,107,255,0.5)',
-                    borderRadius: '16px',
-                    padding: '24px',
-                    fontSize: '36px',
+                    border: '2px solid rgba(138,107,255,0.6)',
+                    borderRadius: '20px',
+                    padding: '20px',
+                    fontSize: '32px',
                     fontWeight: 900,
                     color: '#FFF',
                     textShadow: '0 0 12px rgba(138,107,255,0.8)',
                     cursor: 'pointer',
-                    boxShadow: '0 8px 0 #1A0F2E, 0 15px 20px rgba(0,0,0,0.6), inset 0 2px 10px rgba(255,255,255,0.2)',
-                    transform: 'translateY(-8px)',
+                    boxShadow: '0 6px 0 #1A0F2E, 0 10px 16px rgba(0,0,0,0.6), inset 0 2px 10px rgba(255,255,255,0.2)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    position: 'relative',
                     transition: 'all 0.1s'
                   }}
                   onMouseDown={(e) => {
-                    e.currentTarget.style.transform = 'translateY(0)';
-                    e.currentTarget.style.boxShadow = '0 0 0 #1A0F2E, 0 5px 10px rgba(0,0,0,0.6), inset 0 2px 10px rgba(255,255,255,0.2)';
+                    e.currentTarget.style.transform = 'translateY(4px)';
+                    e.currentTarget.style.boxShadow = '0 2px 0 #1A0F2E, inset 0 2px 10px rgba(255,255,255,0.2)';
                   }}
                   onMouseUp={(e) => {
-                    e.currentTarget.style.transform = 'translateY(-8px)';
-                    e.currentTarget.style.boxShadow = '0 8px 0 #1A0F2E, 0 15px 20px rgba(0,0,0,0.6), inset 0 2px 10px rgba(255,255,255,0.2)';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.transform = 'translateY(-8px)';
-                    e.currentTarget.style.boxShadow = '0 8px 0 #1A0F2E, 0 15px 20px rgba(0,0,0,0.6), inset 0 2px 10px rgba(255,255,255,0.2)';
+                    e.currentTarget.style.transform = 'translateY(0)';
+                    e.currentTarget.style.boxShadow = '0 6px 0 #1A0F2E, 0 10px 16px rgba(0,0,0,0.6), inset 0 2px 10px rgba(255,255,255,0.2)';
                   }}
                   type="button"
                 >
+                  {/* Keybinding Badge */}
+                  <span style={{
+                    position: 'absolute',
+                    top: '8px',
+                    left: '12px',
+                    fontSize: '12px',
+                    fontWeight: 800,
+                    color: 'rgba(255,255,255,0.5)',
+                    background: 'rgba(0,0,0,0.3)',
+                    padding: '2px 8px',
+                    borderRadius: '8px'
+                  }}>
+                    [{i + 1}]
+                  </span>
                   {opt}
                 </button>
               ))}
@@ -6376,39 +7712,98 @@ function MathDefenderGame({ player, onBack, onComplete, onEarn }) {
         </>
       )}
 
+      {/* GAME OVER SCREEN */}
       {gameState === 'gameover' && (
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '24px', textAlign: 'center', zIndex: 10 }}>
-          <div style={{ fontSize: '80px', marginBottom: '20px', animation: 'sway-wobble 2s infinite' }}>💥</div>
-          <h2 style={{ fontSize: '36px', fontWeight: 900, color: '#FF5C5C', marginBottom: '12px', textShadow: '0 4px 12px rgba(255,92,92,0.4)' }}>Castle Breached!</h2>
-          <p style={{ fontSize: '20px', color: '#C1C5D6', marginBottom: '40px' }}>You survived {score} waves.</p>
-          <button
-            onClick={() => { setHealth(3); setScore(0); setGameState('playing'); }}
-            style={{ background: 'linear-gradient(135deg, #FF5C5C, #D32F2F)', border: 'none', borderRadius: '32px', padding: '20px 48px', fontSize: '20px', fontWeight: 900, color: '#fff', cursor: 'pointer', marginBottom: '16px', boxShadow: '0 12px 32px rgba(255,92,92,0.4)' }}
-            type="button"
-          >
-            Defend Again
-          </button>
-          <button
-            onClick={onBack}
-            style={{ background: 'transparent', border: '2px solid rgba(255,255,255,0.2)', borderRadius: '32px', padding: '20px 48px', fontSize: '20px', fontWeight: 800, color: '#fff', cursor: 'pointer' }}
-            type="button"
-          >
-            Retreat to Map
-          </button>
+          <div style={{ fontSize: '80px', marginBottom: '16px' }}>💥🏰</div>
+          <h2 style={{ fontSize: '38px', fontWeight: 900, color: '#FF5C5C', marginBottom: '8px', textShadow: '0 4px 12px rgba(255,92,92,0.4)' }}>Castle Breached!</h2>
+          <p style={{ fontSize: '18px', color: '#C1C5D6', marginBottom: '24px' }}>The monster horde overwhelmed the magical barrier.</p>
+
+          {/* Performance Stats Card */}
+          <div style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '24px', padding: '20px 32px', marginBottom: '32px', display: 'flex', gap: '28px' }}>
+            <div>
+              <div style={{ fontSize: '13px', color: '#A0A5B5', fontWeight: 700 }}>SCORE</div>
+              <div style={{ fontSize: '26px', fontWeight: 900, color: '#FFD54F' }}>{score}</div>
+            </div>
+            <div>
+              <div style={{ fontSize: '13px', color: '#A0A5B5', fontWeight: 700 }}>ACCURACY</div>
+              <div style={{ fontSize: '26px', fontWeight: 900, color: '#6BCBFF' }}>
+                {stats.total > 0 ? Math.round((stats.correct / stats.total) * 100) : 0}%
+              </div>
+            </div>
+            <div>
+              <div style={{ fontSize: '13px', color: '#A0A5B5', fontWeight: 700 }}>MAX COMBO</div>
+              <div style={{ fontSize: '26px', fontWeight: 900, color: '#FF8E53' }}>{maxCombo}x</div>
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', gap: '16px' }}>
+            <button
+              onClick={() => onLoss ? onLoss(startGame) : startGame()}
+              style={{ background: 'linear-gradient(135deg, #FF5C5C, #D32F2F)', border: 'none', borderRadius: '32px', padding: '16px 36px', fontSize: '18px', fontWeight: 900, color: '#fff', cursor: 'pointer', boxShadow: '0 8px 24px rgba(255,92,92,0.4)' }}
+              type="button"
+            >
+              🔄 Defend Again
+            </button>
+            <button
+              onClick={() => onLoss ? onLoss(onBack) : onBack()}
+              style={{ background: 'transparent', border: '2px solid rgba(255,255,255,0.2)', borderRadius: '32px', padding: '16px 36px', fontSize: '18px', fontWeight: 800, color: '#fff', cursor: 'pointer' }}
+              type="button"
+            >
+              🗺️ Retreat to Map
+            </button>
+          </div>
         </div>
       )}
 
+      {/* VICTORY SCREEN */}
       {gameState === 'victory' && (
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '24px', textAlign: 'center', zIndex: 10 }}>
-          <div style={{ fontSize: '100px', marginBottom: '20px', filter: 'drop-shadow(0 0 40px rgba(255,213,79,0.8))', animation: 'bounce-idle 2s infinite' }}>🏆</div>
-          <h2 style={{ fontSize: '40px', fontWeight: 900, color: '#FFD54F', marginBottom: '16px', textShadow: '0 4px 16px rgba(255,213,79,0.5)' }}>Castle Saved!</h2>
-          <p style={{ fontSize: '20px', color: '#fff', marginBottom: '40px', fontWeight: 600 }}>You earned +100 Coins & +1 Star!</p>
+          <div style={{ fontSize: '90px', marginBottom: '16px', filter: 'drop-shadow(0 0 40px rgba(255,213,79,0.9))', animation: 'bounce-idle 2s infinite ease-in-out' }}>🏆👑</div>
+          <h2 style={{ fontSize: '42px', fontWeight: 900, color: '#FFD54F', marginBottom: '8px', textShadow: '0 4px 16px rgba(255,213,79,0.5)' }}>Victory! Castle Saved!</h2>
+          <p style={{ fontSize: '18px', color: '#FFF', marginBottom: '24px', fontWeight: 600 }}>You vanquished all monster waves!</p>
+
+          {/* Stars rating */}
+          <div style={{ fontSize: '48px', marginBottom: '24px', display: 'flex', gap: '12px' }}>
+            <span>⭐</span>
+            <span style={{ opacity: stats.correct / Math.max(1, stats.total) >= 0.7 ? 1 : 0.25 }}>⭐</span>
+            <span style={{ opacity: health === 3 ? 1 : 0.25 }}>⭐</span>
+          </div>
+
+          {/* Performance Stats Card */}
+          <div style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,213,79,0.4)', borderRadius: '24px', padding: '20px 36px', marginBottom: '36px', display: 'flex', gap: '32px' }}>
+            <div>
+              <div style={{ fontSize: '13px', color: '#A0A5B5', fontWeight: 700 }}>FINAL SCORE</div>
+              <div style={{ fontSize: '28px', fontWeight: 900, color: '#FFD54F' }}>{score}</div>
+            </div>
+            <div>
+              <div style={{ fontSize: '13px', color: '#A0A5B5', fontWeight: 700 }}>ACCURACY</div>
+              <div style={{ fontSize: '28px', fontWeight: 900, color: '#6BFFB8' }}>
+                {stats.total > 0 ? Math.round((stats.correct / stats.total) * 100) : 0}%
+              </div>
+            </div>
+            <div>
+              <div style={{ fontSize: '13px', color: '#A0A5B5', fontWeight: 700 }}>MAX COMBO</div>
+              <div style={{ fontSize: '28px', fontWeight: 900, color: '#FF8E53' }}>{maxCombo}x</div>
+            </div>
+          </div>
+
           <button
-            onClick={() => onComplete(100, 50, 1)}
-            style={{ background: 'linear-gradient(135deg, #FFD54F, #FF9E5E)', border: 'none', borderRadius: '32px', padding: '20px 48px', fontSize: '22px', fontWeight: 900, color: '#fff', cursor: 'pointer', boxShadow: '0 12px 32px rgba(255,158,94,0.5), inset 0 2px 8px rgba(255,255,255,0.4)' }}
+            onClick={() => onComplete(150, 100, 3)}
+            style={{
+              background: 'linear-gradient(135deg, #FFD54F, #FF9E5E)',
+              border: 'none',
+              borderRadius: '32px',
+              padding: '20px 52px',
+              fontSize: '22px',
+              fontWeight: 900,
+              color: '#1A0F2E',
+              cursor: 'pointer',
+              boxShadow: '0 12px 32px rgba(255,158,94,0.5), inset 0 2px 8px rgba(255,255,255,0.4)'
+            }}
             type="button"
           >
-            Claim Rewards
+            🎁 Claim +150 Coins & +100 XP
           </button>
         </div>
       )}
@@ -6416,264 +7811,993 @@ function MathDefenderGame({ player, onBack, onComplete, onEarn }) {
   );
 }
 
-function AsteroidBlasterGame({ player, onBack, onComplete }) {
-  const gameState = React.useRef({
-    status: 'intro',
-    score: 0,
-    level: 1,
-    health: 3,
+function AsteroidBlasterGame({ player, onBack, onComplete, onLoss }) {
+  const [status, setStatus] = React.useState('intro'); // 'intro', 'playing', 'gameover', 'victory'
+  const [difficulty, setDifficulty] = React.useState('normal'); // 'easy', 'normal', 'hard'
+  const [score, setScore] = React.useState(0);
+  const [level, setLevel] = React.useState(1);
+  const [health, setHealth] = React.useState(3);
+  const [maxHealth, setMaxHealth] = React.useState(3);
+  const [energy, setEnergy] = React.useState(0); // 0 to 100 overcharge
+  const [combo, setCombo] = React.useState(0);
+  const [maxCombo, setMaxCombo] = React.useState(0);
+  const [shaking, setShaking] = React.useState(false);
+  const [screenFlash, setScreenFlash] = React.useState(null);
+  const [rocketX, setRocketX] = React.useState(50);
+
+  // Power-up Active Durations (in ms)
+  const [tripleShotTimer, setTripleShotTimer] = React.useState(0);
+  const [hasShield, setHasShield] = React.useState(false);
+  const [superBeamActive, setSuperBeamActive] = React.useState(false);
+
+  // Stats
+  const [stats, setStats] = React.useState({ totalShots: 0, hits: 0, destroyed: 0, powerups: 0 });
+
+  // Floating combat text & particles
+  const [floatingTexts, setFloatingTexts] = React.useState([]);
+
+  // High score persistence
+  const [highScore, setHighScore] = React.useState(() => {
+    try {
+      return parseInt(localStorage.getItem('asteroid_blaster_highscore') || '0', 10);
+    } catch (e) {
+      return 0;
+    }
+  });
+
+  // Mutable Game Entities in useRef to run smooth requestAnimationFrame loop
+  const entitiesRef = React.useRef({
     asteroids: [],
     lasers: [],
     particles: [],
-    rocketX: 50,
+    powerups: [],
     lastSpawn: 0,
-    lastFire: 0
+    lastFire: 0,
+    keys: { left: false, right: false, space: false }
   });
 
-  const [renderTick, setRenderTick] = React.useState(0);
-  const requestRef = React.useRef();
+  const [, setTick] = React.useState(0);
 
-  const updateGame = () => {
-    if (gameState.current.status !== 'playing') {
-      requestRef.current = requestAnimationFrame(updateGame);
-      return;
+  // Procedural Web Audio SFX Generator
+  const playSynthSFX = (type) => {
+    try {
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      if (!AudioCtx) return;
+      const ctx = new AudioCtx();
+
+      if (type === 'laser') {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(800, ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(200, ctx.currentTime + 0.1);
+        gain.gain.setValueAtTime(0.2, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.1);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start();
+        osc.stop(ctx.currentTime + 0.1);
+      } else if (type === 'superbeam') {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(150, ctx.currentTime);
+        osc.frequency.linearRampToValueAtTime(600, ctx.currentTime + 0.5);
+        gain.gain.setValueAtTime(0.4, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.6);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start();
+        osc.stop(ctx.currentTime + 0.6);
+      } else if (type === 'shatter') {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(180, ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(30, ctx.currentTime + 0.25);
+        gain.gain.setValueAtTime(0.35, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.25);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start();
+        osc.stop(ctx.currentTime + 0.25);
+      } else if (type === 'powerup') {
+        const notes = [440, 554.37, 659.25, 880];
+        notes.forEach((freq, idx) => {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(freq, ctx.currentTime + idx * 0.04);
+          gain.gain.setValueAtTime(0.2, ctx.currentTime + idx * 0.04);
+          gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + idx * 0.04 + 0.12);
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start(ctx.currentTime + idx * 0.04);
+          osc.stop(ctx.currentTime + idx * 0.04 + 0.12);
+        });
+      } else if (type === 'shieldHit') {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'square';
+        osc.frequency.setValueAtTime(300, ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(600, ctx.currentTime + 0.2);
+        gain.gain.setValueAtTime(0.3, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.2);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start();
+        osc.stop(ctx.currentTime + 0.2);
+      } else if (type === 'victory') {
+        const chord = [523.25, 659.25, 783.99, 1046.50];
+        chord.forEach((freq, i) => {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(freq, ctx.currentTime + i * 0.07);
+          gain.gain.setValueAtTime(0.3, ctx.currentTime + i * 0.07);
+          gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + i * 0.07 + 0.35);
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start(ctx.currentTime + i * 0.07);
+          osc.stop(ctx.currentTime + i * 0.07 + 0.35);
+        });
+      }
+    } catch (e) {
+      // Audio fallback
     }
+  };
 
-    const now = Date.now();
-    const state = gameState.current;
+  // Add floating combat text
+  const addFloatingText = (text, x, y, color = '#FFD54F') => {
+    const id = Date.now() + Math.random();
+    setFloatingTexts(prev => [...prev, { id, text, x, y, color }]);
+    setTimeout(() => {
+      setFloatingTexts(prev => prev.filter(t => t.id !== id));
+    }, 1000);
+  };
 
-    if (now - state.lastFire > 150) {
-      state.lasers.push({ id: now + Math.random(), x: state.rocketX, y: 85 });
-      state.lastFire = now;
-    }
+  // Screen flash trigger
+  const triggerFlash = (color) => {
+    setScreenFlash(color);
+    setTimeout(() => setScreenFlash(null), 300);
+  };
 
-    const spawnRate = 1200 - Math.min((state.level - 1) * 200 + state.score * 15, 900);
-    if (now - state.lastSpawn > spawnRate && state.asteroids.length < 8 + state.level) {
-      const isUFO = state.level >= 4 && Math.random() > 0.85;
-      state.asteroids.push({
-        id: now + Math.random(),
-        x: Math.random() * 80 + 10,
-        y: -10,
-        speed: isUFO ? 0.15 + (state.level * 0.05) : 0.3 + Math.random() * 0.4 + ((state.level - 1) * 0.15) + (state.score * 0.02),
-        dx: isUFO ? (Math.random() > 0.5 ? 0.8 : -0.8) : (Math.random() - 0.5) * Math.min(state.level * 0.1, 0.4),
-        emoji: isUFO ? '🛸' : (Math.random() > 0.5 ? '🪨' : '☄️')
-      });
-      state.lastSpawn = now;
-    }
+  // Keyboard navigation & space trigger
+  React.useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'ArrowLeft' || e.key.toLowerCase() === 'a') entitiesRef.current.keys.left = true;
+      if (e.key === 'ArrowRight' || e.key.toLowerCase() === 'd') entitiesRef.current.keys.right = true;
+      if (e.key === ' ' || e.key.toLowerCase() === 'q') {
+        e.preventDefault();
+        triggerSuperBeam();
+      }
+    };
 
-    state.lasers.forEach(l => { l.y -= 3.0; });
-    state.lasers = state.lasers.filter(l => l.y > -10);
+    const handleKeyUp = (e) => {
+      if (e.key === 'ArrowLeft' || e.key.toLowerCase() === 'a') entitiesRef.current.keys.left = false;
+      if (e.key === 'ArrowRight' || e.key.toLowerCase() === 'd') entitiesRef.current.keys.right = false;
+    };
 
-    let damage = 0;
-    state.asteroids.forEach(a => {
-      a.y += a.speed;
-      a.x += (a.dx || 0);
-      if (a.x < 5) { a.x = 5; if (a.emoji === '🛸') a.dx *= -1; }
-      if (a.x > 95) { a.x = 95; if (a.emoji === '🛸') a.dx *= -1; }
+    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('keyup', handleKeyUp);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('keyup', handleKeyUp);
+    };
+  }, [energy, status]);
+
+  // Triple shot timer countdown
+  React.useEffect(() => {
+    if (tripleShotTimer <= 0) return;
+    const interval = setInterval(() => {
+      setTripleShotTimer(t => Math.max(0, t - 1000));
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [tripleShotTimer]);
+
+  // Overcharge Mega Plasma Beam trigger
+  const triggerSuperBeam = () => {
+    if (status !== 'playing' || energy < 100 || superBeamActive) return;
+
+    setEnergy(0);
+    setSuperBeamActive(true);
+    playSynthSFX('superbeam');
+    triggerFlash('rgba(0, 229, 255, 0.4)');
+    addFloatingText('⚡ PLASMA MEGA BEAM!', 50, 50, '#00E5FF');
+
+    // Superbeam destroys all active screen asteroids
+    const destroyedCount = entitiesRef.current.asteroids.length;
+    entitiesRef.current.asteroids.forEach(a => {
+      // Spawn particles
+      for (let i = 0; i < 6; i++) {
+        const angle = Math.random() * Math.PI * 2;
+        entitiesRef.current.particles.push({
+          id: Date.now() + Math.random(),
+          x: a.x, y: a.y,
+          dx: Math.cos(angle) * 2.5, dy: Math.sin(angle) * 2.5,
+          color: '#00E5FF', life: 1.0
+        });
+      }
     });
-    state.asteroids = state.asteroids.filter(a => {
-      if (a.y > 100) { damage += 1; return false; }
-      return true;
-    });
+    entitiesRef.current.asteroids = [];
 
-    if (damage > 0) {
-      state.health -= damage;
-      if (state.health <= 0) state.status = 'gameover';
-    }
+    setScore(s => s + destroyedCount * 15);
+    setStats(st => ({ ...st, destroyed: st.destroyed + destroyedCount }));
 
-    const newParticles = [];
-    state.asteroids = state.asteroids.filter(a => {
-      let hit = false;
-      state.lasers = state.lasers.filter(l => {
-        if (hit) return true;
-        const dx = Math.abs(a.x - l.x);
-        const dy = Math.abs(a.y - l.y);
+    setTimeout(() => {
+      setSuperBeamActive(false);
+    }, 1200);
+  };
 
-        if (dx < 8 && dy < 8) {
-          hit = true;
-          Array.from({ length: 8 }).forEach((_, i) => {
-            const angle = (i / 8) * Math.PI * 2;
-            newParticles.push({
-              id: Date.now() + Math.random(), x: a.x, y: a.y,
-              dx: Math.cos(angle) * 1.5, dy: Math.sin(angle) * 1.5, life: 1.0
-            });
-          });
-          return false;
-        }
-        return true;
-      });
+  // Start new game session
+  const startGame = () => {
+    setScore(0);
+    setLevel(1);
+    setHealth(3);
+    setMaxHealth(3);
+    setEnergy(0);
+    setCombo(0);
+    setMaxCombo(0);
+    setTripleShotTimer(0);
+    setHasShield(false);
+    setSuperBeamActive(false);
+    setStats({ totalShots: 0, hits: 0, destroyed: 0, powerups: 0 });
+    setRocketX(50);
 
-      if (hit) {
-        state.score += 1;
-        const requiredScore = 20 + (state.level * 5);
-        if (state.score >= requiredScore) {
-          if (state.level >= 10) {
-            state.status = 'victory';
+    entitiesRef.current = {
+      asteroids: [],
+      lasers: [],
+      particles: [],
+      powerups: [],
+      lastSpawn: Date.now(),
+      lastFire: 0,
+      keys: { left: false, right: false, space: false }
+    };
+    setStatus('playing');
+  };
+
+  // Main game tick loop (requestAnimationFrame)
+  React.useEffect(() => {
+    let animId;
+
+    const gameLoop = () => {
+      if (status === 'playing') {
+        const now = Date.now();
+        const entities = entitiesRef.current;
+
+        // 1. Move Rocket via Keyboard
+        let rx = rocketX;
+        if (entities.keys.left) rx = Math.max(8, rx - 1.8);
+        if (entities.keys.right) rx = Math.min(92, rx + 1.8);
+        if (rx !== rocketX) setRocketX(rx);
+
+        // 2. Auto Cannon firing
+        const fireInterval = tripleShotTimer > 0 ? 120 : 160;
+        if (now - entities.lastFire > fireInterval && !superBeamActive) {
+          entities.lastFire = now;
+          playSynthSFX('laser');
+          setStats(st => ({ ...st, totalShots: st.totalShots + (tripleShotTimer > 0 ? 3 : 1) }));
+
+          if (tripleShotTimer > 0) {
+            entities.lasers.push(
+              { id: now + Math.random(), x: rx, y: 82, vx: 0, vy: -3.5, color: '#FFD54F', width: '5px' },
+              { id: now + Math.random() + 1, x: rx - 2, y: 82, vx: -0.6, vy: -3.3, color: '#FF9E5E', width: '4px' },
+              { id: now + Math.random() + 2, x: rx + 2, y: 82, vx: 0.6, vy: -3.3, color: '#FF9E5E', width: '4px' }
+            );
           } else {
-            state.status = 'levelup';
+            entities.lasers.push({
+              id: now + Math.random(), x: rx, y: 82, vx: 0, vy: -3.5, color: '#69F0AE', width: '6px'
+            });
           }
         }
-        return false;
+
+        // 3. Spawn Asteroids & Space Hazards
+        const diffMult = difficulty === 'easy' ? 0.75 : difficulty === 'hard' ? 1.3 : 1.0;
+        const spawnInterval = Math.max(400, (1100 - (level * 70)) / diffMult);
+
+        if (now - entities.lastSpawn > spawnInterval && entities.asteroids.length < 8 + level * 2) {
+          entities.lastSpawn = now;
+          const isBossLevel = level % 5 === 0;
+          const isUFO = !isBossLevel && level >= 3 && Math.random() > 0.75;
+          const isComet = !isBossLevel && level >= 2 && Math.random() > 0.6;
+          const isBoss = isBossLevel && entities.asteroids.filter(a => a.type === 'boss').length === 0;
+
+          let type = 'rock';
+          let emoji = '🪨';
+          let hp = 1;
+          let speed = (0.28 + level * 0.05 + Math.random() * 0.3) * diffMult;
+          let dx = (Math.random() - 0.5) * 0.3;
+
+          if (isBoss) {
+            type = 'boss';
+            emoji = '👾';
+            hp = 12 + level * 3;
+            speed = 0.1;
+            dx = 0.5;
+          } else if (isUFO) {
+            type = 'ufo';
+            emoji = '🛸';
+            hp = 2;
+            speed = 0.22;
+            dx = (Math.random() > 0.5 ? 0.7 : -0.7);
+          } else if (isComet) {
+            type = 'comet';
+            emoji = '☄️';
+            hp = 1;
+            speed = 0.55 * diffMult;
+          }
+
+          entities.asteroids.push({
+            id: now + Math.random(),
+            x: Math.random() * 80 + 10,
+            y: -10,
+            speed,
+            dx,
+            type,
+            hp,
+            maxHp: hp,
+            emoji
+          });
+        }
+
+        // 4. Update Laser Positions
+        entities.lasers.forEach(l => {
+          l.y += l.vy;
+          l.x += l.vx;
+        });
+        entities.lasers = entities.lasers.filter(l => l.y > -10 && l.x >= 0 && l.x <= 100);
+
+        // 5. Update Asteroids
+        let hitPlayerDamage = 0;
+        entities.asteroids.forEach(a => {
+          a.y += a.speed;
+          a.x += a.dx;
+
+          if (a.x <= 5 || a.x >= 95) {
+            a.dx *= -1;
+          }
+
+          // Check Player Collision
+          if (a.y >= 80 && a.y <= 92 && Math.abs(a.x - rx) < 8) {
+            a.y = 120; // Destroy asteroid on crash
+            hitPlayerDamage += 1;
+          }
+        });
+
+        // Remove off-screen & crashed asteroids
+        entities.asteroids = entities.asteroids.filter(a => a.y <= 100);
+
+        // Handle Player Damage
+        if (hitPlayerDamage > 0) {
+          if (hasShield) {
+            setHasShield(false);
+            playSynthSFX('shieldHit');
+            triggerFlash('rgba(0, 229, 255, 0.4)');
+            addFloatingText('🛡️ SHIELD ABSORBED IMPACT!', rx, 80, '#00E5FF');
+          } else {
+            playSynthSFX('shatter');
+            setShaking(true);
+            setCombo(0);
+            triggerFlash('rgba(255, 92, 92, 0.4)');
+            setTimeout(() => setShaking(false), 500);
+
+            setHealth(h => {
+              const nextH = h - hitPlayerDamage;
+              if (nextH <= 0) setStatus('gameover');
+              return Math.max(0, nextH);
+            });
+          }
+        }
+
+        // 6. Laser vs Asteroid Collisions
+        const newParticles = [];
+        const newPowerups = [];
+
+        entities.asteroids = entities.asteroids.filter(a => {
+          let destroyed = false;
+
+          entities.lasers = entities.lasers.filter(l => {
+            if (destroyed) return true;
+            const dist = Math.hypot(a.x - l.x, a.y - l.y);
+
+            if (dist < (a.type === 'boss' ? 12 : 7)) {
+              a.hp -= 1;
+              setStats(st => ({ ...st, hits: st.hits + 1 }));
+
+              // Hit particles
+              newParticles.push({
+                id: Date.now() + Math.random(),
+                x: a.x, y: a.y,
+                dx: (Math.random() - 0.5) * 1.5,
+                dy: (Math.random() - 0.5) * 1.5,
+                color: l.color, life: 0.8
+              });
+
+              if (a.hp <= 0) {
+                destroyed = true;
+                playSynthSFX('shatter');
+
+                // Explosion particles
+                for (let i = 0; i < (a.type === 'boss' ? 16 : 8); i++) {
+                  const angle = (i / 8) * Math.PI * 2;
+                  newParticles.push({
+                    id: Date.now() + Math.random() + i,
+                    x: a.x, y: a.y,
+                    dx: Math.cos(angle) * (a.type === 'boss' ? 3 : 1.8),
+                    dy: Math.sin(angle) * (a.type === 'boss' ? 3 : 1.8),
+                    color: a.type === 'boss' ? '#FF5C5C' : '#FF9E5E', life: 1.0
+                  });
+                }
+
+                // Chance to drop power-up orb
+                if (Math.random() > 0.7 || a.type === 'boss') {
+                  const pTypes = ['energy', 'triple', 'shield'];
+                  const pType = pTypes[Math.floor(Math.random() * pTypes.length)];
+                  newPowerups.push({
+                    id: Date.now() + Math.random(),
+                    x: a.x, y: a.y,
+                    speed: 0.25,
+                    type: pType,
+                    emoji: pType === 'energy' ? '💎' : pType === 'triple' ? '⚡' : '🛡️'
+                  });
+                }
+
+                // Combo & Score updates
+                const earnedPts = a.type === 'boss' ? 150 : a.type === 'ufo' ? 40 : 20;
+                setScore(sc => {
+                  const newSc = sc + earnedPts;
+                  if (newSc > highScore) {
+                    setHighScore(newSc);
+                    try { localStorage.setItem('asteroid_blaster_highscore', newSc.toString()); } catch (e) {}
+                  }
+
+                  // Sector progression check
+                  const requiredScore = level * 100;
+                  if (newSc >= requiredScore) {
+                    if (level >= 10) {
+                      playSynthSFX('victory');
+                      setStatus('victory');
+                    } else {
+                      setLevel(lvl => lvl + 1);
+                      addFloatingText(`SECTOR ${level + 1} UNLOCKED!`, 50, 40, '#FFD54F');
+                    }
+                  }
+
+                  return newSc;
+                });
+
+                setCombo(cb => {
+                  const nCb = cb + 1;
+                  if (nCb > maxCombo) setMaxCombo(nCb);
+                  return nCb;
+                });
+
+                // Overcharge Energy charge (+8 per kill)
+                setEnergy(eg => Math.min(100, eg + (a.type === 'boss' ? 40 : 8)));
+                setStats(st => ({ ...st, destroyed: st.destroyed + 1 }));
+
+                addFloatingText(`+${earnedPts}`, a.x, a.y, '#FFD54F');
+              }
+              return false; // Consume laser bolt
+            }
+            return true;
+          });
+
+          return !destroyed;
+        });
+
+        // 7. Update & Collect Power-Up Orbs
+        entities.powerups.forEach(p => { p.y += p.speed; });
+        entities.powerups = entities.powerups.filter(p => {
+          if (p.y >= 80 && p.y <= 92 && Math.abs(p.x - rx) < 8) {
+            // Powerup Collected!
+            playSynthSFX('powerup');
+            setStats(st => ({ ...st, powerups: st.powerups + 1 }));
+
+            if (p.type === 'energy') {
+              setEnergy(eg => Math.min(100, eg + 35));
+              addFloatingText('💎 +35 ENERGY!', rx, 75, '#00E5FF');
+            } else if (p.type === 'triple') {
+              setTripleShotTimer(10000); // 10s triple shot
+              addFloatingText('⚡ TRIPLE SPREAD SHOT!', rx, 75, '#FFD54F');
+            } else if (p.type === 'shield') {
+              setHasShield(true);
+              addFloatingText('🛡️ SHIELD MATRIX ACTIVE!', rx, 75, '#B28DFF');
+            }
+            return false;
+          }
+          return p.y <= 100;
+        });
+
+        // 8. Update Particles
+        newParticles.forEach(p => entities.particles.push(p));
+        newPowerups.forEach(p => entities.powerups.push(p));
+
+        entities.particles.forEach(p => {
+          p.x += p.dx;
+          p.y += p.dy;
+          p.life -= 0.04;
+        });
+        entities.particles = entities.particles.filter(p => p.life > 0);
+
+        setTick(t => t + 1);
       }
-      return true;
-    });
 
-    state.particles.push(...newParticles);
-    state.particles.forEach(p => { p.x += p.dx; p.y += p.dy; p.life -= 0.03; });
-    state.particles = state.particles.filter(p => p.life > 0);
+      animId = requestAnimationFrame(gameLoop);
+    };
 
-    setRenderTick(t => t + 1);
-    requestRef.current = requestAnimationFrame(updateGame);
-  };
+    animId = requestAnimationFrame(gameLoop);
+    return () => cancelAnimationFrame(animId);
+  }, [status, level, difficulty, rocketX, tripleShotTimer, hasShield, superBeamActive]);
 
-  React.useEffect(() => {
-    requestRef.current = requestAnimationFrame(updateGame);
-    return () => { if (requestRef.current) cancelAnimationFrame(requestRef.current); };
-  }, []);
-
+  // Pointer & Touch position tracker
   const handlePointerMove = (e) => {
-    if (gameState.current.status !== 'playing') return;
+    if (status !== 'playing') return;
     const rect = e.currentTarget.getBoundingClientRect();
     const x = ((e.clientX - rect.left) / rect.width) * 100;
-    gameState.current.rocketX = Math.max(5, Math.min(95, x));
+    setRocketX(Math.max(6, Math.min(94, x)));
   };
 
-  const startGame = () => {
-    gameState.current = {
-      status: 'playing', score: 0, level: 1, health: 3,
-      asteroids: [], lasers: [], particles: [], rocketX: 50,
-      lastSpawn: Date.now(), lastFire: 0
-    };
-    setRenderTick(t => t + 1);
-  };
-
-  const startNextLevel = () => {
-    gameState.current = {
-      ...gameState.current,
-      status: 'playing', score: 0, level: gameState.current.level + 1, health: 3,
-      asteroids: [], lasers: [], particles: [], rocketX: 50,
-      lastSpawn: Date.now(), lastFire: 0
-    };
-    setRenderTick(t => t + 1);
-  };
-
-  const state = gameState.current;
-
-  const getHearts = () => {
+  // Render Hearts
+  const renderHearts = () => {
     const hearts = [];
-    for (let i = 0; i < 3; i++) {
-      hearts.push(<span key={i} style={{ opacity: i < state.health ? 1 : 0.2, fontSize: '24px', filter: i < state.health ? 'drop-shadow(0 0 8px rgba(255,0,0,0.8))' : 'none' }}>❤️</span>);
+    for (let i = 0; i < maxHealth; i++) {
+      hearts.push(
+        <span key={i} style={{
+          opacity: i < health ? 1 : 0.25,
+          fontSize: '24px',
+          filter: i < health ? 'drop-shadow(0 0 8px rgba(255,50,50,0.8))' : 'none',
+          transition: 'all 0.3s'
+        }}>
+          ❤️
+        </span>
+      );
     }
     return hearts;
   };
 
-  return (
-    <div className="screen active" onPointerMove={handlePointerMove} onTouchMove={(e) => handlePointerMove(e.touches[0])} style={{ background: 'radial-gradient(circle at center, #2B1B54 0%, #0B041C 100%)', color: '#fff', padding: 0, display: 'flex', flexDirection: 'column', position: 'absolute', overflow: 'hidden', width: '100%', height: '100%', userSelect: 'none', WebkitUserSelect: 'none' }}>
-      <div style={{ position: 'absolute', top: '10%', left: '20%', width: '4px', height: '4px', background: '#fff', borderRadius: '50%', boxShadow: '0 0 8px #fff' }} />
-      <div style={{ position: 'absolute', top: '25%', left: '80%', width: '3px', height: '3px', background: '#fff', borderRadius: '50%', boxShadow: '0 0 6px #fff' }} />
-      <div style={{ position: 'absolute', top: '40%', left: '15%', width: '5px', height: '5px', background: '#FFD54F', borderRadius: '50%', boxShadow: '0 0 10px #FFD54F' }} />
+  const entities = entitiesRef.current;
 
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '20px', zIndex: 10 }}>
-        <button onClick={onBack} style={{ background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '16px', width: '44px', height: '44px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#fff' }} type="button">
+  return (
+    <div
+      className="screen active"
+      onPointerMove={handlePointerMove}
+      onTouchMove={(e) => handlePointerMove(e.touches[0])}
+      style={{
+        background: 'radial-gradient(circle at center, #2B1B54 0%, #0B041C 100%)',
+        color: '#fff',
+        padding: 0,
+        display: 'flex',
+        flexDirection: 'column',
+        position: 'absolute',
+        overflow: 'hidden',
+        width: '100%',
+        height: '100%',
+        userSelect: 'none',
+        WebkitUserSelect: 'none'
+      }}
+    >
+      {/* Flash overlay */}
+      {screenFlash && (
+        <div style={{ position: 'absolute', inset: 0, background: screenFlash, zIndex: 99, pointerEvents: 'none', transition: 'opacity 0.2s' }} />
+      )}
+
+      {/* Top Header Bar */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 20px', zIndex: 10, background: 'rgba(11,4,28,0.6)', backdropFilter: 'blur(10px)' }}>
+        <button onClick={onBack} style={{
+          background: 'rgba(255,255,255,0.12)',
+          border: '1px solid rgba(255,255,255,0.2)',
+          borderRadius: '16px',
+          width: '44px', height: '44px',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          cursor: 'pointer', color: '#fff',
+          boxShadow: '0 4px 12px rgba(0,0,0,0.3)'
+        }} type="button">
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
         </button>
-        <div style={{ display: 'flex', gap: '8px' }}>
-          {getHearts()}
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+          <div style={{ background: 'rgba(255,158,94,0.15)', border: '1px solid rgba(255,158,94,0.4)', borderRadius: '20px', padding: '6px 14px', fontSize: '14px', fontWeight: 800, color: '#FF9E5E', display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <span>🏆</span> {score} <span style={{ opacity: 0.6, fontSize: '11px' }}>({highScore})</span>
+          </div>
+
+          <div style={{ display: 'flex', gap: '6px' }}>
+            {renderHearts()}
+          </div>
         </div>
       </div>
 
-      {state.status === 'intro' && (
+      {/* INTRO SCREEN */}
+      {status === 'intro' && (
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '24px', textAlign: 'center', zIndex: 10 }}>
-          <div style={{ fontSize: '80px', marginBottom: '24px', animation: 'sway-wobble 3s infinite alternate' }}>🛸</div>
-          <h1 style={{ fontSize: '40px', fontWeight: 900, marginBottom: '16px', color: '#FF9E5E' }}>Asteroid Blaster</h1>
-          <p style={{ fontSize: '18px', color: '#C1C5D6', marginBottom: '48px' }}>Drag the rocket to shoot lasers and blast the asteroids!</p>
-          <button onClick={startGame} style={{ background: 'linear-gradient(135deg, #FF9E5E, #FF5C5C)', border: 'none', borderRadius: '32px', padding: '20px 48px', fontSize: '22px', fontWeight: 900, color: '#fff', cursor: 'pointer', boxShadow: '0 12px 32px rgba(255,92,92,0.5)' }} type="button">
-            Launch Mission
+          <div style={{ fontSize: '90px', marginBottom: '16px', filter: 'drop-shadow(0 0 40px rgba(255,158,94,0.8))', animation: 'bounce-idle 2s infinite ease-in-out' }}>🚀🛸</div>
+          <h1 style={{ fontSize: '42px', fontWeight: 900, marginBottom: '12px', background: 'linear-gradient(180deg, #FF9E5E 0%, #FF5C5C 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', filter: 'drop-shadow(0 4px 12px rgba(0,0,0,0.5))' }}>Asteroid Blaster</h1>
+          <p style={{ fontSize: '16px', color: '#C1C5D6', marginBottom: '28px', maxWidth: '85%', lineHeight: 1.5 }}>
+            Pilot your starship, blast deep space hazards, collect <b>Energy Crystals</b>, and unleash the <b>Overcharge Plasma Beam</b>!
+          </p>
+
+          {/* Difficulty selector */}
+          <div style={{ display: 'flex', gap: '12px', marginBottom: '32px' }}>
+            {['easy', 'normal', 'hard'].map(d => (
+              <button
+                key={d}
+                onClick={() => setDifficulty(d)}
+                style={{
+                  background: difficulty === d ? 'linear-gradient(135deg, #FF9E5E, #FF5C5C)' : 'rgba(255,255,255,0.08)',
+                  border: difficulty === d ? '2px solid #FFD54F' : '1px solid rgba(255,255,255,0.2)',
+                  borderRadius: '16px',
+                  padding: '10px 20px',
+                  color: '#fff',
+                  fontWeight: 800,
+                  fontSize: '14px',
+                  cursor: 'pointer',
+                  textTransform: 'uppercase',
+                  boxShadow: difficulty === d ? '0 0 16px rgba(255,158,94,0.6)' : 'none'
+                }}
+                type="button"
+              >
+                {d === 'easy' ? '🟢 Cadet' : d === 'normal' ? '🟡 Captain' : '🔴 Ace Pilot'}
+              </button>
+            ))}
+          </div>
+
+          <button
+            onClick={startGame}
+            style={{
+              background: 'linear-gradient(135deg, #FF9E5E, #FF5C5C)',
+              border: '2px solid rgba(255,255,255,0.4)',
+              borderRadius: '32px',
+              padding: '20px 56px',
+              fontSize: '24px',
+              fontWeight: 900,
+              color: '#fff',
+              cursor: 'pointer',
+              boxShadow: '0 12px 32px rgba(255,92,92,0.5), inset 0 2px 8px rgba(255,255,255,0.4)',
+              textTransform: 'uppercase',
+              letterSpacing: '0.08em'
+            }}
+            type="button"
+          >
+            🚀 Launch Mission
           </button>
         </div>
       )}
 
-      {state.status === 'playing' && (
-        <div style={{ flex: 1, position: 'relative', overflow: 'hidden', pointerEvents: 'none', perspective: '800px' }}>
+      {/* PLAYING SCREEN */}
+      {status === 'playing' && (
+        <div style={{ flex: 1, position: 'relative', overflow: 'hidden', transform: shaking ? 'translateY(6px)' : 'none', transition: 'transform 0.05s' }}>
 
-          <style>{`
-            @keyframes star-scroll {
-               0% { background-position: 0 0; }
-               100% { background-position: 0 100px; }
-            }
-          `}</style>
+          {/* Sector & Energy Status Header */}
+          <div style={{ padding: '0 20px 10px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', zIndex: 10 }}>
+            {/* Sector Badge */}
+            <div style={{ background: 'linear-gradient(90deg, #FF9E5E, #FF5C5C)', borderRadius: '999px', padding: '6px 20px', fontSize: '15px', fontWeight: 900, color: '#FFF', boxShadow: '0 4px 16px rgba(255,158,94,0.5)' }}>
+              Sector {level} • Goal: {level * 100} PTS
+            </div>
 
-          {/* 3D Scrolling Starfield */}
+            {/* Active Triple Shot Timer */}
+            {tripleShotTimer > 0 && (
+              <div style={{ background: 'linear-gradient(90deg, #FFD54F, #FF9E5E)', borderRadius: '999px', padding: '4px 14px', fontSize: '13px', fontWeight: 900, color: '#0B041C', animation: 'bounce-idle 0.6s infinite alternate' }}>
+                ⚡ TRIPLE SPREAD ({Math.ceil(tripleShotTimer / 1000)}s)
+              </div>
+            )}
+
+            {/* Shield Active Badge */}
+            {hasShield && (
+              <div style={{ background: 'rgba(0,229,255,0.2)', border: '1px solid #00E5FF', borderRadius: '999px', padding: '4px 14px', fontSize: '13px', fontWeight: 900, color: '#00E5FF' }}>
+                🛡️ SHIELD MATRIX
+              </div>
+            )}
+          </div>
+
+          {/* Overcharge Beam Trigger Button Bar */}
+          <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '12px', padding: '4px 20px', zIndex: 10 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span style={{ fontSize: '13px', fontWeight: 900, color: '#00E5FF' }}>⚡ OVERCHARGE</span>
+              <div style={{ width: '120px', height: '14px', background: 'rgba(0,0,0,0.6)', borderRadius: '10px', overflow: 'hidden', border: '1px solid rgba(0,229,255,0.5)' }}>
+                <div style={{ width: `${energy}%`, height: '100%', background: 'linear-gradient(90deg, #00E5FF, #0072FF)', transition: 'width 0.2s' }} />
+              </div>
+            </div>
+
+            <button
+              onClick={triggerSuperBeam}
+              style={{
+                background: energy >= 100 ? 'linear-gradient(135deg, #00E5FF, #0072FF)' : 'rgba(255,255,255,0.08)',
+                border: '1px solid rgba(0,229,255,0.6)',
+                borderRadius: '16px',
+                padding: '6px 16px',
+                color: energy >= 100 ? '#0B041C' : '#fff',
+                fontSize: '13px',
+                fontWeight: 900,
+                cursor: energy >= 100 ? 'pointer' : 'not-allowed',
+                opacity: energy >= 100 ? 1 : 0.4,
+                boxShadow: energy >= 100 ? '0 0 20px rgba(0,229,255,0.8)' : 'none'
+              }}
+              type="button"
+            >
+              <span>⚡ MEGA BEAM [SPACE]</span>
+            </button>
+          </div>
+
+          {/* 3D Warp Starfield Background */}
           <div style={{
-            position: 'absolute',
-            top: '-50%',
-            left: '-50%',
-            width: '200%',
-            height: '200%',
+            position: 'absolute', inset: 0,
+            background: 'radial-gradient(circle at center, #2B1B54 0%, #0B041C 100%)',
+            zIndex: -2
+          }} />
+          <div style={{
+            position: 'absolute', top: '-50%', left: '-50%', width: '200%', height: '200%',
             backgroundImage: 'radial-gradient(circle at 10% 20%, #FFF 1px, transparent 1px), radial-gradient(circle at 80% 40%, #FFF 1.5px, transparent 1px), radial-gradient(circle at 30% 70%, #FFF 2px, transparent 2px)',
             backgroundSize: '100px 100px, 150px 150px, 200px 200px',
             transform: 'rotateX(60deg) translateZ(-100px)',
-            transformOrigin: 'center center',
-            animation: 'star-scroll 1s linear infinite',
-            zIndex: 1,
-            opacity: 0.6
+            animation: 'star-scroll 1.2s linear infinite',
+            opacity: 0.5, zIndex: -1
           }} />
 
-          <div style={{ position: 'absolute', top: '10px', left: '50%', transform: 'translateX(-50%)', background: 'rgba(0,0,0,0.5)', padding: '8px 24px', borderRadius: '24px', fontSize: '20px', fontWeight: 900, color: '#FF9E5E', border: '1px solid rgba(255,158,94,0.3)', boxShadow: '0 0 12px rgba(0,0,0,0.3)', zIndex: 10 }}>
-            Level {state.level} • Score: {state.score}/{20 + (state.level * 5)}
-          </div>
+          <style>{`
+            @keyframes star-scroll {
+              0% { background-position: 0 0; }
+              100% { background-position: 0 100px; }
+            }
+            @keyframes beam-pulse {
+              0% { opacity: 0.8; width: 60px; }
+              100% { opacity: 1.0; width: 90px; }
+            }
+          `}</style>
 
-          {/* 3D Lasers */}
-          {state.lasers.map(l => (
-            <div key={l.id} style={{ position: 'absolute', top: `${l.y}%`, left: `${l.x}%`, width: '6px', height: '30px', background: 'linear-gradient(180deg, #69F0AE, #fff)', borderRadius: '3px', transform: `translate(-50%, -50%) scale(${(l.y / 100) * 0.5 + 0.5})`, boxShadow: '0 0 20px #69F0AE', zIndex: 4 }} />
+          {/* Superbeam Effect */}
+          {superBeamActive && (
+            <div style={{
+              position: 'absolute',
+              bottom: '100px',
+              left: `${rocketX}%`,
+              transform: 'translateX(-50%)',
+              width: '80px',
+              height: '100%',
+              background: 'linear-gradient(0deg, #00E5FF 0%, #FFFFFF 50%, transparent 100%)',
+              boxShadow: '0 0 50px 20px #00E5FF, inset 0 0 20px #FFF',
+              borderRadius: '999px',
+              zIndex: 7,
+              animation: 'beam-pulse 0.1s infinite alternate'
+            }} />
+          )}
+
+          {/* LASERS */}
+          {entities.lasers.map(l => (
+            <div
+              key={l.id}
+              style={{
+                position: 'absolute',
+                top: `${l.y}%`,
+                left: `${l.x}%`,
+                width: l.width,
+                height: '28px',
+                background: `linear-gradient(180deg, ${l.color}, #FFF)`,
+                borderRadius: '999px',
+                transform: 'translate(-50%, -50%)',
+                boxShadow: `0 0 16px ${l.color}`,
+                zIndex: 5
+              }}
+            />
           ))}
 
-          {state.particles.map(p => (
-            <div key={p.id} style={{ position: 'absolute', top: `${p.y}%`, left: `${p.x}%`, width: '8px', height: '8px', background: '#FF9E5E', borderRadius: '50%', boxShadow: '0 0 8px #FF5C5C', opacity: p.life, zIndex: 5, pointerEvents: 'none' }} />
-          ))}
-
-          {/* Scaling Asteroids (Depth effect) */}
-          {state.asteroids.map(a => (
-            <div key={a.id} style={{ position: 'absolute', top: `${a.y}%`, left: `${a.x}%`, fontSize: '50px', transform: `translate(-50%, -50%) scale(${Math.max(0.2, (a.y / 100) * 1.2 + 0.3)})`, filter: 'drop-shadow(0 10px 15px rgba(0,0,0,0.8))', zIndex: 5, pointerEvents: 'none' }}>
-              {a.emoji}
+          {/* POWER-UP ORBS */}
+          {entities.powerups.map(p => (
+            <div
+              key={p.id}
+              style={{
+                position: 'absolute',
+                top: `${p.y}%`,
+                left: `${p.x}%`,
+                transform: 'translate(-50%, -50%)',
+                fontSize: '28px',
+                filter: 'drop-shadow(0 0 12px #00E5FF)',
+                zIndex: 6,
+                animation: 'bounce-idle 0.8s infinite alternate ease-in-out'
+              }}
+            >
+              {p.emoji}
             </div>
           ))}
 
-          <div style={{ position: 'absolute', bottom: '20px', left: `${state.rocketX}%`, transform: 'translateX(-50%)', fontSize: '70px', zIndex: 6, filter: 'drop-shadow(0 20px 20px rgba(0,176,255,0.7))', pointerEvents: 'none' }}>
+          {/* ASTEROIDS & BOSS ENEMIES */}
+          {entities.asteroids.map(a => (
+            <div
+              key={a.id}
+              style={{
+                position: 'absolute',
+                top: `${a.y}%`,
+                left: `${a.x}%`,
+                transform: 'translate(-50%, -50%)',
+                zIndex: 6,
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center'
+              }}
+            >
+              {/* Boss HP Bar */}
+              {a.type === 'boss' && (
+                <div style={{ width: '80px', height: '8px', background: 'rgba(0,0,0,0.6)', borderRadius: '4px', overflow: 'hidden', border: '1px solid #FF5C5C', marginBottom: '4px' }}>
+                  <div style={{ width: `${(a.hp / a.maxHp) * 100}%`, height: '100%', background: '#FF5C5C' }} />
+                </div>
+              )}
+
+              <div style={{
+                fontSize: a.type === 'boss' ? '80px' : a.type === 'ufo' ? '52px' : '48px',
+                filter: a.type === 'boss'
+                  ? 'drop-shadow(0 0 25px rgba(255,92,92,0.9))'
+                  : 'drop-shadow(0 8px 16px rgba(0,0,0,0.7))'
+              }}>
+                {a.emoji}
+              </div>
+            </div>
+          ))}
+
+          {/* PARTICLES */}
+          {entities.particles.map(p => (
+            <div
+              key={p.id}
+              style={{
+                position: 'absolute',
+                top: `${p.y}%`,
+                left: `${p.x}%`,
+                width: '8px',
+                height: '8px',
+                background: p.color,
+                borderRadius: '50%',
+                opacity: p.life,
+                transform: 'translate(-50%, -50%)',
+                pointerEvents: 'none',
+                zIndex: 7
+              }}
+            />
+          ))}
+
+          {/* FLOATING COMBAT TEXT */}
+          {floatingTexts.map(ft => (
+            <div
+              key={ft.id}
+              style={{
+                position: 'absolute',
+                top: `${ft.y}%`,
+                left: `${ft.x}%`,
+                transform: 'translateX(-50%)',
+                fontSize: '20px',
+                fontWeight: 900,
+                color: ft.color,
+                textShadow: '0 2px 8px rgba(0,0,0,0.8)',
+                zIndex: 10,
+                pointerEvents: 'none'
+              }}
+            >
+              {ft.text}
+            </div>
+          ))}
+
+          {/* PLAYER ROCKET SPRITE */}
+          <div
+            style={{
+              position: 'absolute',
+              bottom: '30px',
+              left: `${rocketX}%`,
+              transform: 'translateX(-50%)',
+              fontSize: '68px',
+              zIndex: 8,
+              filter: hasShield
+                ? 'drop-shadow(0 0 30px #00E5FF)'
+                : 'drop-shadow(0 12px 24px rgba(0,176,255,0.7))',
+              pointerEvents: 'none'
+            }}
+          >
             🚀
+            {/* Thruster Flame effect */}
+            <div style={{
+              position: 'absolute',
+              bottom: '-12px',
+              left: '50%',
+              transform: 'translateX(-50%)',
+              width: '14px',
+              height: '24px',
+              background: 'linear-gradient(180deg, #FFD54F, #FF5C5C)',
+              borderRadius: '50%',
+              boxShadow: '0 0 16px #FF5C5C',
+              animation: 'bounce-idle 0.2s infinite alternate'
+            }} />
           </div>
         </div>
       )}
 
-      {state.status === 'gameover' && (
+      {/* GAME OVER SCREEN */}
+      {status === 'gameover' && (
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '24px', textAlign: 'center', zIndex: 10 }}>
-          <div style={{ fontSize: '80px', marginBottom: '20px' }}>💥</div>
-          <h2 style={{ fontSize: '36px', fontWeight: 900, color: '#FF5C5C', marginBottom: '12px' }}>Ship Damaged!</h2>
-          <p style={{ fontSize: '20px', color: '#C1C5D6', marginBottom: '40px' }}>You reached Level {state.level}!</p>
-          <button onClick={startGame} style={{ background: 'linear-gradient(135deg, #FF5C5C, #D32F2F)', border: 'none', borderRadius: '32px', padding: '20px 48px', fontSize: '20px', fontWeight: 900, color: '#fff', cursor: 'pointer', marginBottom: '16px' }} type="button">
-            Try Again
-          </button>
+          <div style={{ fontSize: '80px', marginBottom: '16px' }}>💥🚀</div>
+          <h2 style={{ fontSize: '38px', fontWeight: 900, color: '#FF5C5C', marginBottom: '8px', textShadow: '0 4px 12px rgba(255,92,92,0.4)' }}>Ship Damaged!</h2>
+          <p style={{ fontSize: '18px', color: '#C1C5D6', marginBottom: '24px' }}>Deep space hazards overwhelmed your shields.</p>
+
+          {/* Performance Stats Card */}
+          <div style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '24px', padding: '20px 32px', marginBottom: '32px', display: 'flex', gap: '28px' }}>
+            <div>
+              <div style={{ fontSize: '13px', color: '#A0A5B5', fontWeight: 700 }}>FINAL SCORE</div>
+              <div style={{ fontSize: '26px', fontWeight: 900, color: '#FF9E5E' }}>{score}</div>
+            </div>
+            <div>
+              <div style={{ fontSize: '13px', color: '#A0A5B5', fontWeight: 700 }}>ACCURACY</div>
+              <div style={{ fontSize: '26px', fontWeight: 900, color: '#00E5FF' }}>
+                {stats.totalShots > 0 ? Math.round((stats.hits / stats.totalShots) * 100) : 0}%
+              </div>
+            </div>
+            <div>
+              <div style={{ fontSize: '13px', color: '#A0A5B5', fontWeight: 700 }}>MAX COMBO</div>
+              <div style={{ fontSize: '26px', fontWeight: 900, color: '#FFD54F' }}>{maxCombo}x</div>
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', gap: '16px' }}>
+            <button
+              onClick={() => onLoss ? onLoss(startGame) : startGame()}
+              style={{ background: 'linear-gradient(135deg, #FF5C5C, #D32F2F)', border: 'none', borderRadius: '32px', padding: '16px 36px', fontSize: '18px', fontWeight: 900, color: '#fff', cursor: 'pointer', boxShadow: '0 8px 24px rgba(255,92,92,0.4)' }}
+              type="button"
+            >
+              🔄 Launch Again
+            </button>
+            <button
+              onClick={() => onLoss ? onLoss(onBack) : onBack()}
+              style={{ background: 'transparent', border: '2px solid rgba(255,255,255,0.2)', borderRadius: '32px', padding: '16px 36px', fontSize: '18px', fontWeight: 800, color: '#fff', cursor: 'pointer' }}
+              type="button"
+            >
+              🗺️ Retreat to Map
+            </button>
+          </div>
         </div>
       )}
 
-      {state.status === 'levelup' && (
+      {/* VICTORY SCREEN */}
+      {status === 'victory' && (
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '24px', textAlign: 'center', zIndex: 10 }}>
-          <div style={{ fontSize: '100px', marginBottom: '20px', animation: 'bounce-idle 1s infinite' }}>🛡️</div>
-          <h2 style={{ fontSize: '40px', fontWeight: 900, color: '#FFD54F', marginBottom: '16px' }}>Sector {state.level} Clear!</h2>
-          <p style={{ fontSize: '20px', color: '#fff', marginBottom: '40px' }}>Ready for Sector {state.level + 1}?</p>
-          <button onClick={startNextLevel} style={{ background: 'linear-gradient(135deg, #FFD54F, #FF9E5E)', border: 'none', borderRadius: '32px', padding: '20px 48px', fontSize: '22px', fontWeight: 900, color: '#000', cursor: 'pointer', boxShadow: '0 12px 32px rgba(255,158,94,0.5)' }} type="button">
-            Next Sector
-          </button>
-        </div>
-      )}
+          <div style={{ fontSize: '90px', marginBottom: '16px', filter: 'drop-shadow(0 0 40px rgba(255,158,94,0.9))', animation: 'bounce-idle 2s infinite ease-in-out' }}>🏆🌌</div>
+          <h2 style={{ fontSize: '42px', fontWeight: 900, color: '#FFD54F', marginBottom: '8px', textShadow: '0 4px 16px rgba(255,213,79,0.5)' }}>Galaxy Saved!</h2>
+          <p style={{ fontSize: '18px', color: '#FFF', marginBottom: '24px', fontWeight: 600 }}>You cleared all 10 sector hazards!</p>
 
-      {state.status === 'victory' && (
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '24px', textAlign: 'center', zIndex: 10 }}>
-          <div style={{ fontSize: '100px', marginBottom: '20px', animation: 'bounce-idle 2s infinite', filter: 'drop-shadow(0 0 40px #FFD54F)' }}>🏆</div>
-          <h2 style={{ fontSize: '40px', fontWeight: 900, color: '#FFD54F', marginBottom: '16px' }}>Galaxy Saved!</h2>
-          <p style={{ fontSize: '20px', color: '#fff', marginBottom: '40px' }}>You earned +100 Coins & +1 Star!</p>
-          <button onClick={() => onComplete(100, 50, 1)} style={{ background: 'linear-gradient(135deg, #FFD54F, #FF9E5E)', border: 'none', borderRadius: '32px', padding: '20px 48px', fontSize: '22px', fontWeight: 900, color: '#000', cursor: 'pointer', boxShadow: '0 12px 32px rgba(255,158,94,0.5)' }} type="button">
-            Claim Rewards
+          {/* Stars rating */}
+          <div style={{ fontSize: '48px', marginBottom: '24px', display: 'flex', gap: '12px' }}>
+            <span>⭐</span>
+            <span style={{ opacity: stats.totalShots > 0 && (stats.hits / stats.totalShots) >= 0.5 ? 1 : 0.25 }}>⭐</span>
+            <span style={{ opacity: health === 3 ? 1 : 0.25 }}>⭐</span>
+          </div>
+
+          {/* Performance Stats Card */}
+          <div style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,158,94,0.4)', borderRadius: '24px', padding: '20px 36px', marginBottom: '36px', display: 'flex', gap: '32px' }}>
+            <div>
+              <div style={{ fontSize: '13px', color: '#A0A5B5', fontWeight: 700 }}>FINAL SCORE</div>
+              <div style={{ fontSize: '28px', fontWeight: 900, color: '#FF9E5E' }}>{score}</div>
+            </div>
+            <div>
+              <div style={{ fontSize: '13px', color: '#A0A5B5', fontWeight: 700 }}>ACCURACY</div>
+              <div style={{ fontSize: '28px', fontWeight: 900, color: '#6BFFB8' }}>
+                {stats.totalShots > 0 ? Math.round((stats.hits / stats.totalShots) * 100) : 0}%
+              </div>
+            </div>
+            <div>
+              <div style={{ fontSize: '13px', color: '#A0A5B5', fontWeight: 700 }}>MAX COMBO</div>
+              <div style={{ fontSize: '28px', fontWeight: 900, color: '#FFD54F' }}>{maxCombo}x</div>
+            </div>
+          </div>
+
+          <button
+            onClick={() => onComplete(150, 100, 3)}
+            style={{
+              background: 'linear-gradient(135deg, #FF9E5E, #FF5C5C)',
+              border: 'none',
+              borderRadius: '32px',
+              padding: '20px 52px',
+              fontSize: '22px',
+              fontWeight: 900,
+              color: '#fff',
+              cursor: 'pointer',
+              boxShadow: '0 12px 32px rgba(255,92,92,0.5), inset 0 2px 8px rgba(255,255,255,0.4)'
+            }}
+            type="button"
+          >
+            🎁 Claim +150 Coins & +100 XP
           </button>
         </div>
       )}
@@ -6681,7 +8805,7 @@ function AsteroidBlasterGame({ player, onBack, onComplete }) {
   );
 }
 
-function DeepSeaDiverGame({ player, onBack, onComplete }) {
+function DeepSeaDiverGame({ player, onBack, onComplete, onLoss }) {
   const gameState = React.useRef({
     status: 'intro',
     score: 0,
@@ -6884,7 +9008,7 @@ function DeepSeaDiverGame({ player, onBack, onComplete }) {
           <div style={{ fontSize: '80px', marginBottom: '20px' }}>💫</div>
           <h2 style={{ fontSize: '36px', fontWeight: 900, color: '#FF5252', marginBottom: '12px' }}>Ouch!</h2>
           <p style={{ fontSize: '20px', color: '#E1F5FE', marginBottom: '40px' }}>You reached Level {state.level}!</p>
-          <button onClick={(e) => { e.stopPropagation(); startGame(); }} style={{ background: 'linear-gradient(135deg, #29B6F6, #0277BD)', border: 'none', borderRadius: '32px', padding: '20px 48px', fontSize: '20px', fontWeight: 900, color: '#fff', cursor: 'pointer', marginBottom: '16px', zIndex: 20 }} type="button">
+          <button onClick={(e) => { e.stopPropagation(); if (onLoss) onLoss(startGame); else startGame(); }} style={{ background: 'linear-gradient(135deg, #29B6F6, #0277BD)', border: 'none', borderRadius: '32px', padding: '20px 48px', fontSize: '20px', fontWeight: 900, color: '#fff', cursor: 'pointer', marginBottom: '16px', zIndex: 20 }} type="button">
             Try Again
           </button>
         </div>
@@ -7010,7 +9134,7 @@ const WORD_FOREST_LEVEL_POOLS = [
   }
 ];
 
-function DinoJumperGame({ player, onBack, onComplete, isWordForest = true }) {
+function DinoJumperGame({ player, onBack, onComplete, onLoss, isWordForest = true }) {
   const [renderTick, setRenderTick] = React.useState(0);
   const gameState = React.useRef({
     status: 'intro', score: 0, level: 1, lives: 3, y: 0, velocity: 0,
@@ -8218,7 +10342,7 @@ function DinoJumperGame({ player, onBack, onComplete, isWordForest = true }) {
           <p style={{ fontSize: '18px', color: '#A7F3D0', marginBottom: '32px' }}>
             Tarzan explored <strong>Level {state.level}</strong> with <strong>{state.score}</strong> points!
           </p>
-          <button onClick={(e) => { e.stopPropagation(); startGame(); }} style={{
+          <button onClick={(e) => { e.stopPropagation(); if (onLoss) onLoss(startGame); else startGame(); }} style={{
             background: 'linear-gradient(135deg, #FF7043, #D84315)',
             border: 'none',
             borderRadius: '32px',
@@ -8491,7 +10615,7 @@ function getMelodyAudioContext() {
   return globalMelodyAudioCtx;
 }
 
-function MelodyMakerGame({ player, onBack, onComplete }) {
+function MelodyMakerGame({ player, onBack, onComplete, onLoss }) {
   const gameState = React.useRef({
     status: 'intro',
     playMode: 'keys', // 'keys' (middle Swara keys, no falling notes) or 'arcade' (falling notes)
@@ -9447,7 +11571,7 @@ function MelodyMakerGame({ player, onBack, onComplete }) {
           <p style={{ fontSize: '18px', color: '#D8B4F8', marginBottom: '32px' }}>
             You scored <strong>{state.score}</strong> points with a max combo of <strong>{state.maxCombo}</strong>!
           </p>
-          <button onClick={startGame} style={{
+          <button onClick={() => onLoss ? onLoss(startGame) : startGame()} style={{
             background: 'linear-gradient(135deg, #FF6B6B, #FF8E53)',
             border: 'none',
             borderRadius: '32px',
@@ -9508,7 +11632,7 @@ const RAINBOW_SHAPES = [
   { name: 'Crescent Moon', emoji: '🌙', color: '#FF4081' }
 ];
 
-function RainbowVillageGame({ onBack, onEarn }) {
+function RainbowVillageGame({ onBack, onEarn, onComplete }) {
   const [mode, setMode] = useState('spectrum');
   const [rainbowArcCount, setRainbowArcCount] = useState(0);
   const [selectedMix, setSelectedMix] = useState([]);
@@ -9959,7 +12083,10 @@ function RainbowVillageGame({ onBack, onEarn }) {
             You mastered all 7 colors of the Rainbow Spectrum!
           </p>
           <button
-            onClick={resetSpectrum}
+            onClick={() => {
+              if (onComplete) onComplete(100, 50, 1);
+              resetSpectrum();
+            }}
             style={{
               background: 'linear-gradient(135deg, #FF4081, #7C4DFF)',
               border: 'none',
@@ -10011,7 +12138,7 @@ const BAKERY_GUESTS = [
   { name: 'Bunny', emoji: '🐰' }
 ];
 
-function WonderBakeryGame({ onBack, onEarn }) {
+function WonderBakeryGame({ onBack, onEarn, onComplete }) {
   const [mode, setMode] = useState('fractions');
   const [orderIdx, setOrderIdx] = useState(0);
   const [patternIdx, setPatternIdx] = useState(0);
@@ -10320,7 +12447,11 @@ function WonderBakeryGame({ onBack, onEarn }) {
             You baked and served all delicious bakery orders!
           </p>
           <button
-            onClick={() => { setShowCelebration(false); setOrderIdx(0); }}
+            onClick={() => {
+              if (onComplete) onComplete(100, 50, 1);
+              setShowCelebration(false);
+              setOrderIdx(0);
+            }}
             style={{
               background: 'linear-gradient(135deg, #FF7043, #D84315)',
               border: 'none',
@@ -10432,7 +12563,7 @@ const TARZAN_LESSON_LEVELS = [
   }
 ];
 
-function PhonicsTreeClimberGame({ player, onBack, onEarn }) {
+function PhonicsTreeClimberGame({ player, onBack, onEarn, onLoss, onComplete }) {
   const [levelIdx, setLevelIdx] = useState(0);
   const [stepIdx, setStepIdx] = useState(0);
   const [distanceMeters, setDistanceMeters] = useState(100);
@@ -10799,7 +12930,10 @@ function PhonicsTreeClimberGame({ player, onBack, onEarn }) {
           </p>
 
           <button
-            onClick={handleNextLevel}
+            onClick={() => {
+              if (onComplete) onComplete(150, 100, 3);
+              handleNextLevel();
+            }}
             style={{
               background: 'linear-gradient(135deg, #7CB342, #33691E)',
               border: '2px solid #FFF',

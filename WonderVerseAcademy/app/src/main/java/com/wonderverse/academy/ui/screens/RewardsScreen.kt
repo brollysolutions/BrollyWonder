@@ -30,9 +30,16 @@ import com.wonderverse.academy.ui.theme.InkText
 import com.wonderverse.academy.ui.theme.StreakOrange
 import com.wonderverse.academy.ui.theme.SunGold
 
+import androidx.compose.ui.platform.LocalContext
+import android.app.Activity
+import com.wonderverse.academy.ads.AdManager
+import com.wonderverse.academy.ui.components.AdBanner
+
 @Composable
 fun RewardsScreen(onBack: () -> Unit) {
     var boxOpened by remember { mutableStateOf(false) }
+    var adBonusMessage by remember { mutableStateOf<String?>(null) }
+    val context = LocalContext.current
 
     Column(modifier = Modifier.fillMaxSize().background(CreamBg)) {
         Row(
@@ -61,7 +68,52 @@ fun RewardsScreen(onBack: () -> Unit) {
             }
         }
 
-        Spacer(Modifier.height(16.dp))
+        Spacer(Modifier.height(12.dp))
+
+        // Watch Ad for Bonus Coins
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 20.dp),
+            colors = CardDefaults.cardColors(containerColor = Color(0xFFE0F2FE)),
+            shape = RoundedCornerShape(18.dp)
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text("🎬 Watch Video Ad", fontWeight = FontWeight.Bold, color = Color(0xFF0369A1))
+                    Text(
+                        adBonusMessage ?: "Earn +50 Bonus Coins!",
+                        fontSize = 12.sp,
+                        color = Color(0xFF0C4A6E)
+                    )
+                }
+                Button(
+                    onClick = {
+                        val activity = context as? Activity
+                        if (activity != null) {
+                            AdManager.showRewardedAd(activity) { amount ->
+                                PlayerState.coins.value += amount
+                                adBonusMessage = "🎉 Claimed +$amount Coins!"
+                            }
+                        } else {
+                            PlayerState.coins.value += 50
+                            adBonusMessage = "🎉 Claimed +50 Coins!"
+                        }
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF0284C7))
+                ) {
+                    Text("Watch", fontWeight = FontWeight.Bold)
+                }
+            }
+        }
+
+        Spacer(Modifier.height(12.dp))
 
         // Mystery box
         Column(
@@ -83,7 +135,7 @@ fun RewardsScreen(onBack: () -> Unit) {
             )
         }
 
-        Spacer(Modifier.height(16.dp))
+        Spacer(Modifier.height(12.dp))
 
         Text(
             "Badges",
@@ -94,12 +146,15 @@ fun RewardsScreen(onBack: () -> Unit) {
 
         LazyVerticalGrid(
             columns = GridCells.Fixed(3),
-            contentPadding = PaddingValues(20.dp),
+            contentPadding = PaddingValues(horizontal = 20.dp, vertical = 8.dp),
             horizontalArrangement = Arrangement.spacedBy(12.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+            modifier = Modifier.weight(1f)
         ) {
             items(demoBadges) { badge -> BadgeTile(badge) }
         }
+
+        AdBanner()
     }
 }
 

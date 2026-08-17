@@ -38,6 +38,7 @@ fun LessonScreen(onBack: () -> Unit, onFinish: () -> Unit) {
     var showResult by remember { mutableStateOf(false) }
     var correctCount by remember { mutableIntStateOf(0) }
     var showRewardPopup by remember { mutableStateOf(false) }
+    var showLossPopup by remember { mutableStateOf(false) }
 
     val kingdom = journeyForKingdom(JourneyState.selectedKingdomId.value)
     val sectionIndex = JourneyState.selectedSectionIndex.value.coerceIn(0, kingdom.sections.lastIndex)
@@ -166,14 +167,19 @@ fun LessonScreen(onBack: () -> Unit, onFinish: () -> Unit) {
                                     selectedOption = null
                                     showResult = false
                                 } else {
-                                    val coinsEarned = 20 + correctCount * 5
-                                    val xpEarned = 30 + correctCount * 10
-                                    PlayerState.addRewards(
-                                        coinsEarned = coinsEarned,
-                                        xpEarned = xpEarned,
-                                        starsEarned = correctCount
-                                    )
-                                    showRewardPopup = true
+                                    val isWin = correctCount >= Math.ceil(card.questions.size / 2.0).toInt()
+                                    if (isWin) {
+                                        val coinsEarned = 20 + correctCount * 5
+                                        val xpEarned = 30 + correctCount * 10
+                                        PlayerState.addRewards(
+                                            coinsEarned = coinsEarned,
+                                            xpEarned = xpEarned,
+                                            starsEarned = correctCount
+                                        )
+                                        showRewardPopup = true
+                                    } else {
+                                        showLossPopup = true
+                                    }
                                 }
                             }
                         },
@@ -202,6 +208,22 @@ fun LessonScreen(onBack: () -> Unit, onFinish: () -> Unit) {
                 correctCount = correctCount,
                 total = card.questions.size,
                 onContinue = onFinish
+            )
+        }
+
+        AnimatedVisibility(visible = showLossPopup, enter = fadeIn(), exit = fadeOut()) {
+            LossPopup(
+                title = card.title,
+                correctCount = correctCount,
+                total = card.questions.size,
+                onRetry = {
+                    questionIndex = 0
+                    selectedOption = null
+                    showResult = false
+                    correctCount = 0
+                    showLossPopup = false
+                },
+                onExit = onFinish
             )
         }
     }
@@ -239,8 +261,13 @@ private fun LessonChip(text: String) {
     }
 }
 
+import android.app.Activity
+import com.wonderverse.academy.ads.AdManager
+
 @Composable
 private fun RewardPopup(title: String, correctCount: Int, total: Int, onContinue: () -> Unit) {
+    val context = LocalContext.current
+
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -256,9 +283,9 @@ private fun RewardPopup(title: String, correctCount: Int, total: Int, onContinue
         ) {
             Text("🎉", fontSize = 48.sp)
             Spacer(Modifier.height(8.dp))
-            Text("${title} cleared", style = MaterialTheme.typography.titleLarge, color = InkText)
+            Text("${title} Cleared!", style = MaterialTheme.typography.titleLarge, color = InkText)
             Spacer(Modifier.height(4.dp))
-            Text("You got $correctCount / $total correct", color = InkText.copy(alpha = 0.7f))
+            Text("Level Complete • You got $correctCount / $total correct", color = InkText.copy(alpha = 0.7f))
             Spacer(Modifier.height(16.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                 RewardChip(emoji = "🪙", label = "+${20 + correctCount * 5}")
@@ -267,12 +294,80 @@ private fun RewardPopup(title: String, correctCount: Int, total: Int, onContinue
             }
             Spacer(Modifier.height(24.dp))
             Button(
-                onClick = onContinue,
+                onClick = {
+                    val activity = context as? Activity
+                    if (activity != null) {
+                        AdManager.showInterstitialAd(activity) {
+                            onContinue()
+                        }
+                    } else {
+                        onContinue()
+                    }
+                },
                 colors = ButtonDefaults.buttonColors(containerColor = WordForestGreen),
                 shape = RoundedCornerShape(14.dp),
                 modifier = Modifier.fillMaxWidth().height(48.dp)
             ) {
-                Text("Continue", fontWeight = FontWeight.Bold)
+                Text("Continue (Watch Ad)", fontWeight = FontWeight.Bold)
+            }
+        }
+    }
+}
+
+@Composable
+private fun LossPopup(title: String, correctCount: Int, total: Int, onRetry: () -> Unit, onExit: () -> Unit) {
+    val context = LocalContext.current
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color.Black.copy(alpha = 0.65f)),
+        contentAlignment = Alignment.Center
+    ) {
+        Column(
+            modifier = Modifier
+                .padding(32.dp)
+                .background(Color.White, RoundedCornerShape(24.dp))
+                .padding(24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text("💔", fontSize = 48.sp)
+            Spacer(Modifier.height(8.dp))
+            Text("${title} Failed", style = MaterialTheme.typography.titleLarge, color = Color(0xFFD32F2F))
+            Spacer(Modifier.height(4.dp))
+            Text("You got $correctCount / $total correct. Keep practicing!", color = InkText.copy(alpha = 0.7f))
+            Spacer(Modifier.height(24.dp))
+            Button(
+                onClick = {
+                    val activity = context as? Activity
+                    if (activity != null) {
+                        AdManager.showInterstitialAd(activity) {
+                            onRetry()
+                        }
+                    } else {
+                        onRetry()
+                    }
+                },
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFD32F2F)),
+                shape = RoundedCornerShape(14.dp),
+                modifier = Modifier.fillMaxWidth().height(48.dp)
+            ) {
+                Text("Try Again (Watch Ad)", fontWeight = FontWeight.Bold, color = Color.White)
+            }
+            Spacer(Modifier.height(8.dp))
+            TextButton(
+                onClick = {
+                    val activity = context as? Activity
+                    if (activity != null) {
+                        AdManager.showInterstitialAd(activity) {
+                            onExit()
+                        }
+                    } else {
+                        onExit()
+                    }
+                }
+            ) {
+                Text("Exit Level", color = InkText.copy(alpha = 0.6f))
             }
         }
     }

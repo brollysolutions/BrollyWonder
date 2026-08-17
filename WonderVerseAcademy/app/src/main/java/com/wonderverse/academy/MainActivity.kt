@@ -17,9 +17,12 @@ import com.wonderverse.academy.data.PlayerState
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 
+import com.wonderverse.academy.ads.AdManager
+
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        AdManager.initialize(this)
         PlayerState.loadFromPreferences(this)
 
         lifecycleScope.launch {

@@ -70,6 +70,8 @@ object PlayerState {
         petHappiness.value = prefs.getInt("pet_happiness", 70)
         petHunger.value = prefs.getInt("pet_hunger", 55)
         petEmoji.value = prefs.getString("pet_emoji", "🐉") ?: "🐉"
+        // Saves that predate telemetry simply load an empty log — no history is invented.
+        LearningLog.fromJson(prefs.getString("learning_log", null))
     }
 
     fun saveToPreferences(context: Context) {
@@ -88,6 +90,7 @@ object PlayerState {
             .putInt("pet_happiness", petHappiness.value)
             .putInt("pet_hunger", petHunger.value)
             .putString("pet_emoji", petEmoji.value)
+            .putString("learning_log", LearningLog.toJson())
             .apply()
     }
 

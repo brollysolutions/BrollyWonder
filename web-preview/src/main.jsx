@@ -1135,6 +1135,127 @@ function WebInterstitialAdModal({ type = 'finish', onClose, onAction }) {
   );
 }
 
+/* ------------------------------------------------------------------ *
+ * Learning telemetry — the data layer behind the Parent Dashboard.
+ * Everything here is local-only and rides the existing localStorage +
+ * backend sync in App(). No new storage, no network calls of its own.
+ * ------------------------------------------------------------------ */
+
+const HISTORY_LIMIT = 60;          // keep the log small enough to sync cheaply
+const HEARTBEAT_SECONDS = 15;      // time-on-task sampling interval
+
+function dayKey(date) {
+  const d = date || new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+function daysBetween(fromKey, toKey) {
+  const from = new Date(`${fromKey}T00:00:00`);
+  const to = new Date(`${toKey}T00:00:00`);
+  return Math.round((to - from) / 86400000);
+}
+
+// Screens that count as active learning time, mapped to a parent-readable label.
+const ACTIVITY_LABELS = {
+  lesson: 'Quests',
+  'phonics-tree-climber': 'Word Forest games',
+  'word-dino-jumper': 'Word Forest games',
+  'dino-jumper': 'Word Forest games',
+  'math-defender': 'Math Castle games',
+  'asteroid-blaster': 'Space Science games',
+  'deep-sea-diver': 'Ocean Kingdom games',
+  'dino-jumper-history': 'Dino Valley games',
+  'melody-maker': 'Creative Village games',
+  'starlight-lesson': 'Creative Village games',
+  'alphabet-game': 'Nursery games',
+  'animal-farm': 'Nursery games',
+  'fruit-market': 'Nursery games',
+  'memory-match': 'Nursery games',
+  starlight: 'Nursery games',
+  cauldron: 'Nursery games',
+  'cloud-hopper': 'Nursery games',
+  'rainbow-village': 'Nursery games',
+  'wonder-bakery': 'Nursery games'
+};
+
+// Older saves predate telemetry — give them the shape without inventing history.
+function ensureTelemetry(player) {
+  if (!player) return player;
+  return {
+    ...player,
+    history: Array.isArray(player.history) ? player.history : [],
+    skills: player.skills && typeof player.skills === 'object' ? player.skills : {},
+    timeByDay: player.timeByDay && typeof player.timeByDay === 'object' ? player.timeByDay : {},
+    timeByActivity: player.timeByActivity && typeof player.timeByActivity === 'object' ? player.timeByActivity : {},
+    lastActiveDate: player.lastActiveDate || null
+  };
+}
+
+// Real streaks, replacing the hardcoded value. Consecutive calendar days only.
+function applyStreak(player) {
+  const today = dayKey();
+  if (player.lastActiveDate === today) return player;
+  const gap = player.lastActiveDate ? daysBetween(player.lastActiveDate, today) : null;
+  let streakDays;
+  if (gap === 1) streakDays = (player.streakDays || 0) + 1;
+  else if (gap === 0) streakDays = player.streakDays || 1;
+  else streakDays = 1;
+  return { ...player, streakDays, lastActiveDate: today };
+}
+
+function addTimeOnTask(player, label, seconds) {
+  const today = dayKey();
+  return {
+    ...player,
+    timeByDay: { ...player.timeByDay, [today]: (player.timeByDay?.[today] || 0) + seconds },
+    timeByActivity: { ...player.timeByActivity, [label]: (player.timeByActivity?.[label] || 0) + seconds }
+  };
+}
+
+/**
+ * Record one completed activity.
+ * meta: { type, kingdomId, kingdomName, skill, correct, total, color }
+ * correct/total are omitted for games where accuracy isn't measured — the
+ * dashboard reports those as "completed" rather than faking a score.
+ */
+function recordActivity(player, meta) {
+  if (!meta) return player;
+  const entry = {
+    ts: Date.now(),
+    day: dayKey(),
+    type: meta.type || 'quest',
+    kingdomId: meta.kingdomId || null,
+    kingdomName: meta.kingdomName || null,
+    skill: meta.skill || null,
+    color: meta.color || '#6C4AB6',
+    correct: typeof meta.correct === 'number' ? meta.correct : null,
+    total: typeof meta.total === 'number' ? meta.total : null
+  };
+
+  const history = [entry, ...(player.history || [])].slice(0, HISTORY_LIMIT);
+
+  const skills = { ...(player.skills || {}) };
+  if (entry.skill && entry.total) {
+    const prev = skills[entry.skill] || { attempts: 0, correct: 0, questions: 0, lastSeen: 0, kingdomId: entry.kingdomId };
+    skills[entry.skill] = {
+      ...prev,
+      kingdomId: entry.kingdomId,
+      attempts: prev.attempts + 1,
+      correct: prev.correct + entry.correct,
+      questions: prev.questions + entry.total,
+      lastSeen: entry.ts
+    };
+  }
+
+  return { ...player, history, skills };
+}
+
+function formatMinutes(seconds) {
+  const mins = Math.round((seconds || 0) / 60);
+  if (mins < 60) return `${mins}m`;
+  return `${Math.floor(mins / 60)}h ${mins % 60}m`;
+}
+
 function App() {
   const [screen, setScreen] = useState('splash');
   const [player, setPlayer] = useState(null);
@@ -1179,11 +1300,15 @@ function App() {
           level: 1, streakDays: 3, stars: 12, petName: 'Glimmer',
           petHappiness: 85, petHunger: 90, petEmoji: '🐉',
           inventory: [], equipped: { hat: null, habitat: 'default' },
-          hasCompletedOnboarding: false
+          hasCompletedOnboarding: false,
+          history: [], skills: {}, timeByDay: {}, timeByActivity: {}, lastActiveDate: null
         };
       } else {
         isFirstLaunch = !loadedPlayer.hasCompletedOnboarding;
       }
+
+      // Backfill telemetry fields on older saves, then roll the daily streak.
+      loadedPlayer = applyStreak(ensureTelemetry(loadedPlayer));
 
       setPlayer(loadedPlayer);
       if (loadedPlayer.name && loadedPlayer.name !== 'Wonder Explorer') {
@@ -1229,6 +1354,18 @@ function App() {
     }
   }, [player, showSplash]);
 
+  // Time-on-task heartbeat: samples only while a learning screen is open and
+  // the tab is visible, so "20 minutes" means 20 minutes of actual activity.
+  useEffect(() => {
+    const label = ACTIVITY_LABELS[screen];
+    if (!label || showSplash) return undefined;
+    const timer = setInterval(() => {
+      if (document.hidden) return;
+      setPlayer((prev) => (prev ? addTimeOnTask(prev, label, HEARTBEAT_SECONDS) : prev));
+    }, HEARTBEAT_SECONDS * 1000);
+    return () => clearInterval(timer);
+  }, [screen, showSplash]);
+
   const activeKingdom = useMemo(() => KINGDOMS.find((item) => item.id === activeKingdomId) || KINGDOMS[0], [activeKingdomId]);
   const activeSection = activeKingdom.sections[selectedSectionIndex] || activeKingdom.sections[0];
 
@@ -1238,8 +1375,8 @@ function App() {
     setScreen('kdetail');
   };
 
-  const completeLesson = (coinsEarned, xpEarned, starsEarned) => {
-    setPlayer((prev) => addRewards(prev, coinsEarned, xpEarned, starsEarned));
+  const completeLesson = (coinsEarned, xpEarned, starsEarned, meta) => {
+    setPlayer((prev) => recordActivity(addRewards(prev, coinsEarned, xpEarned, starsEarned), meta));
     playSuccessSound();
     setInterstitialAdState({
       type: 'finish',
@@ -1262,6 +1399,16 @@ function App() {
       if (onRetry) onRetry();
     }
   };
+
+  // Boss games report a completion without a per-question score.
+  const completeGame = (label) => (coinsEarned, xpEarned, starsEarned) =>
+    completeLesson(coinsEarned, xpEarned, starsEarned, {
+      type: 'game',
+      skill: label,
+      kingdomId: activeKingdomId,
+      kingdomName: activeKingdom.name,
+      color: activeKingdom.color
+    });
 
   const earnRewards = (coinsEarned, starsEarned) => {
     setPlayer((prev) => addRewards(prev, coinsEarned, 0, starsEarned));
@@ -1295,7 +1442,9 @@ function App() {
       case 'avatar':
         return <AvatarScreen heroName={heroName} setHeroName={setHeroName} heroEmoji={heroEmoji} setHeroEmoji={setHeroEmoji} onStart={startAdventure} onBack={player?.hasCompletedOnboarding ? () => setScreen('map') : undefined} />;
       case 'map':
-        return <MapScreen player={player} kingdoms={KINGDOMS} onOpenKingdom={openKingdom} onOpenPet={() => setScreen('pet')} onOpenRewards={() => setScreen('rewards')} onOpenShop={() => setScreen('shop')} onOpenNursery={() => setScreen('nursery-hub')} onOpenProfile={() => setScreen('avatar')} onWatchRewarded={() => setShowAdModal(true)} />;
+        return <MapScreen player={player} kingdoms={KINGDOMS} onOpenKingdom={openKingdom} onOpenPet={() => setScreen('pet')} onOpenRewards={() => setScreen('rewards')} onOpenShop={() => setScreen('shop')} onOpenNursery={() => setScreen('nursery-hub')} onOpenProfile={() => setScreen('avatar')} onOpenParents={() => setScreen('parents')} onWatchRewarded={() => setShowAdModal(true)} />;
+      case 'parents':
+        return <ParentDashboard player={player} kingdoms={KINGDOMS} onBack={() => setScreen('map')} />;
       case 'kdetail':
         return <KingdomDetailScreen kingdom={activeKingdom} sectionIndex={selectedSectionIndex} setSectionIndex={setSelectedSectionIndex} onBack={() => setScreen('map')} onStartLesson={(target) => setScreen(typeof target === 'string' ? target : 'lesson')} />;
       case 'lesson':
@@ -1303,7 +1452,7 @@ function App() {
       case 'phonics-tree-climber':
         return <PhonicsTreeClimberGame player={player} onBack={() => setScreen('kdetail')} onEarn={earnRewards} onLoss={triggerLossAd} />;
       case 'math-defender':
-        return <MathDefenderGame player={player} onBack={() => setScreen('kdetail')} onComplete={completeLesson} onEarn={earnRewards} onLoss={triggerLossAd} />;
+        return <MathDefenderGame player={player} onBack={() => setScreen('kdetail')} onComplete={completeGame('Math Defender')} onEarn={earnRewards} onLoss={triggerLossAd} />;
       case 'pet':
         return <PetScreen player={player} setPlayer={setPlayer} onBack={() => setScreen('map')} onFeed={feedPet} onPlay={playPet} />;
       case 'rewards':
@@ -1333,16 +1482,16 @@ function App() {
       case 'starlight-lesson':
         return <StarlightGame onBack={() => setScreen('kdetail')} onComplete={completeLesson} onLoss={triggerLossAd} />;
       case 'asteroid-blaster':
-        return <AsteroidBlasterGame player={player} onComplete={completeLesson} onLoss={triggerLossAd} onBack={() => setScreen('kdetail')} />;
+        return <AsteroidBlasterGame player={player} onComplete={completeGame('Asteroid Blaster')} onLoss={triggerLossAd} onBack={() => setScreen('kdetail')} />;
       case 'deep-sea-diver':
-        return <DeepSeaDiverGame player={player} onComplete={completeLesson} onLoss={triggerLossAd} onBack={() => setScreen('kdetail')} />;
+        return <DeepSeaDiverGame player={player} onComplete={completeGame('Deep Sea Diver')} onLoss={triggerLossAd} onBack={() => setScreen('kdetail')} />;
       case 'word-dino-jumper':
       case 'dino-jumper':
-        return <DinoJumperGame player={player} isWordForest={true} onComplete={completeLesson} onLoss={triggerLossAd} onBack={() => setScreen('kdetail')} />;
+        return <DinoJumperGame player={player} isWordForest={true} onComplete={completeGame('Word Dino Jumper')} onLoss={triggerLossAd} onBack={() => setScreen('kdetail')} />;
       case 'dino-jumper-history':
-        return <DinoJumperGame player={player} isWordForest={false} onComplete={completeLesson} onLoss={triggerLossAd} onBack={() => setScreen('kdetail')} />;
+        return <DinoJumperGame player={player} isWordForest={false} onComplete={completeGame('Dino Jumper')} onLoss={triggerLossAd} onBack={() => setScreen('kdetail')} />;
       case 'melody-maker':
-        return <MelodyMakerGame player={player} onComplete={completeLesson} onLoss={triggerLossAd} onBack={() => setScreen('kdetail')} />;
+        return <MelodyMakerGame player={player} onComplete={completeGame('Melody Maker')} onLoss={triggerLossAd} onBack={() => setScreen('kdetail')} />;
       default:
         return <SplashScreen />;
     }
@@ -1818,7 +1967,7 @@ function getKingdomVisuals(kingdom) {
   }
 }
 
-function MapScreen({ player, kingdoms, onOpenKingdom, onOpenPet, onOpenRewards, onOpenShop, onOpenNursery, onOpenProfile, onWatchRewarded }) {
+function MapScreen({ player, kingdoms, onOpenKingdom, onOpenPet, onOpenRewards, onOpenShop, onOpenNursery, onOpenProfile, onOpenParents, onWatchRewarded }) {
   // Generate some floating background orbs for the mesh effect
   const orbs = React.useMemo(() => {
     return Array.from({ length: 4 }).map((_, i) => ({
@@ -1891,8 +2040,26 @@ function MapScreen({ player, kingdoms, onOpenKingdom, onOpenPet, onOpenRewards, 
       </div>
 
       <div style={{ paddingBottom: '40px', position: 'relative', zIndex: 2 }}>
+        {/* Discreet parent entry — visually quiet so it doesn't compete for a child's attention */}
+        <div style={{ display: 'flex', justifyContent: 'flex-end', padding: '12px 20px 0' }}>
+          <button
+            onClick={onOpenParents}
+            aria-label="For parents"
+            style={{
+              display: 'flex', alignItems: 'center', gap: '6px', background: 'rgba(255,255,255,0.55)',
+              border: '1px solid rgba(46,33,64,0.08)', borderRadius: '999px', padding: '7px 14px',
+              cursor: 'pointer', color: '#6B7280', fontSize: '12px', fontWeight: 800,
+              letterSpacing: '0.04em', backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)'
+            }}
+            type="button"
+          >
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" /><path d="M13.73 21a2 2 0 0 1-3.46 0" /></svg>
+            For Parents
+          </button>
+        </div>
+
         {/* Personalized Greeting / Profile Button */}
-        <button onClick={onOpenProfile} style={{ padding: '32px 20px 24px', display: 'flex', alignItems: 'center', gap: '16px', background: 'transparent', border: 'none', width: '100%', textAlign: 'left', cursor: 'pointer' }} type="button">
+        <button onClick={onOpenProfile} style={{ padding: '12px 20px 24px', display: 'flex', alignItems: 'center', gap: '16px', background: 'transparent', border: 'none', width: '100%', textAlign: 'left', cursor: 'pointer' }} type="button">
           <div style={{
             width: '64px', height: '64px', borderRadius: '50%', background: 'linear-gradient(135deg, #FFD54F, #FF9E5E)',
             display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '36px',
@@ -2995,6 +3162,17 @@ function LessonScreen({ player, kingdom, section, onBack, onComplete, onLoss }) 
   const coinsEarned = 20 + correctCount * 5 + streak * 3;
   const xpEarned = 30 + correctCount * 10 + streak * 5;
 
+  // Telemetry for the Parent Dashboard — reported whether the quest was passed or not.
+  const questMeta = {
+    type: 'quest',
+    kingdomId: kingdom.id,
+    kingdomName: kingdom.name,
+    color: kingdom.color,
+    skill: section.title,
+    correct: correctCount,
+    total
+  };
+
   const handleOptionClick = (index) => {
     if (showResult) return;
     setSelectedOption(index);
@@ -3288,7 +3466,7 @@ function LessonScreen({ player, kingdom, section, onBack, onComplete, onLoss }) 
 
             {correctCount >= Math.ceil(total / 2) ? (
               <button
-                onClick={() => onComplete(coinsEarned, xpEarned, correctCount)}
+                onClick={() => onComplete(coinsEarned, xpEarned, correctCount, questMeta)}
                 style={{ width: '100%', background: kingdom.color, color: '#fff', border: 'none', borderRadius: '24px', padding: '20px', fontSize: '18px', fontWeight: 900, cursor: 'pointer', boxShadow: `0 12px 24px ${hexToRgba(kingdom.color, 0.4)}`, textTransform: 'uppercase', letterSpacing: '0.05em' }}
                 type="button"
               >
@@ -3318,9 +3496,9 @@ function LessonScreen({ player, kingdom, section, onBack, onComplete, onLoss }) 
                 <button
                   onClick={() => {
                     if (onLoss) {
-                      onLoss(() => onComplete(coinsEarned, xpEarned, correctCount));
+                      onLoss(() => onComplete(coinsEarned, xpEarned, correctCount, questMeta));
                     } else {
-                      onComplete(coinsEarned, xpEarned, correctCount);
+                      onComplete(coinsEarned, xpEarned, correctCount, questMeta);
                     }
                   }}
                   style={{ width: '100%', background: 'transparent', color: '#8A91A8', border: 'none', fontSize: '14px', fontWeight: 700, cursor: 'pointer', textDecoration: 'underline' }}
@@ -3333,6 +3511,357 @@ function LessonScreen({ player, kingdom, section, onBack, onComplete, onLoss }) 
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+/* ================================================================== *
+ * PARENT DASHBOARD
+ * Deliberately NOT glassmorphic candy. The child-facing brand is
+ * wondrous; the parent-facing brand is calm, specific and evidence-led.
+ * Reports only what was actually measured — never estimates progress.
+ * ================================================================== */
+
+const P_INK = '#2E2140';
+const P_MUTED = '#6B7280';
+const P_LINE = 'rgba(46,33,64,0.08)';
+const P_ACCENT = '#6C4AB6';
+const P_CARD = { background: '#FFFFFF', borderRadius: '20px', padding: '18px', border: `1px solid ${P_LINE}`, boxShadow: '0 2px 8px rgba(31,42,78,0.04)' };
+
+const MASTERY_BANDS = [
+  { min: 85, label: 'Mastered', color: '#2E9E5B', bg: 'rgba(46,158,91,0.1)' },
+  { min: 60, label: 'Practising', color: '#C98A1B', bg: 'rgba(201,138,27,0.12)' },
+  { min: 0, label: 'Needs work', color: '#D2544B', bg: 'rgba(210,84,75,0.1)' }
+];
+
+function bandFor(percent) {
+  return MASTERY_BANDS.find((b) => percent >= b.min) || MASTERY_BANDS[2];
+}
+
+function ParentDashboard({ player, kingdoms, onBack }) {
+  const [unlocked, setUnlocked] = useState(false);
+  if (!unlocked) return <ParentGate onUnlock={() => setUnlocked(true)} onBack={onBack} />;
+  return <ParentReport player={player} kingdoms={kingdoms} onBack={onBack} />;
+}
+
+/* A speed bump, not security: keeps a 5-year-old out of their own report. */
+function ParentGate({ onUnlock, onBack }) {
+  const [challenge] = useState(() => ({ a: 3 + Math.floor(Math.random() * 6), b: 4 + Math.floor(Math.random() * 6) }));
+  const [value, setValue] = useState('');
+  const [error, setError] = useState(false);
+  const answer = challenge.a * challenge.b;
+
+  const submit = (e) => {
+    e.preventDefault();
+    if (parseInt(value, 10) === answer) onUnlock();
+    else { setError(true); setValue(''); }
+  };
+
+  return (
+    <div className="screen active" style={{ position: 'absolute', inset: 0, background: '#F7F8FB', display: 'flex', flexDirection: 'column', padding: '24px 20px', overflowY: 'auto' }}>
+      <button onClick={onBack} style={{ background: '#fff', border: `1px solid ${P_LINE}`, borderRadius: '14px', width: '44px', height: '44px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: P_INK, flexShrink: 0 }} type="button">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="19" y1="12" x2="5" y2="12" /><polyline points="12 19 5 12 12 5" /></svg>
+      </button>
+
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', maxWidth: '340px', width: '100%', margin: '0 auto' }}>
+        <div style={{ fontSize: '40px', marginBottom: '14px' }}>🔒</div>
+        <h1 style={{ fontSize: '24px', fontWeight: 900, color: P_INK, margin: '0 0 8px', letterSpacing: '-0.02em' }}>Parents only</h1>
+        <p style={{ fontSize: '14px', fontWeight: 500, color: P_MUTED, margin: '0 0 24px', lineHeight: 1.5 }}>
+          Answer to see your child's progress report.
+        </p>
+
+        <form onSubmit={submit} style={{ ...P_CARD }}>
+          <div style={{ fontSize: '13px', fontWeight: 800, color: P_MUTED, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '10px' }}>What is</div>
+          <div style={{ fontSize: '34px', fontWeight: 900, color: P_INK, marginBottom: '16px' }}>{challenge.a} × {challenge.b}</div>
+          <input
+            value={value}
+            onChange={(e) => { setValue(e.target.value); setError(false); }}
+            inputMode="numeric"
+            autoFocus
+            placeholder="Your answer"
+            style={{ width: '100%', boxSizing: 'border-box', padding: '14px 16px', fontSize: '16px', fontWeight: 700, color: P_INK, borderRadius: '14px', border: `1.5px solid ${error ? '#D2544B' : P_LINE}`, outline: 'none', background: '#FBFBFD', fontFamily: 'inherit' }}
+          />
+          {error && <div style={{ color: '#D2544B', fontSize: '13px', fontWeight: 700, marginTop: '8px' }}>Not quite — try again.</div>}
+          <button type="submit" style={{ width: '100%', marginTop: '14px', padding: '15px', borderRadius: '14px', border: 'none', background: P_ACCENT, color: '#fff', fontSize: '15px', fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' }}>
+            Open Dashboard
+          </button>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+function ParentReport({ player, kingdoms, onBack }) {
+  const history = player?.history || [];
+  const skills = player?.skills || {};
+
+  // Last 7 calendar days, oldest first.
+  const week = useMemo(() => {
+    const out = [];
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date();
+      d.setDate(d.getDate() - i);
+      const key = dayKey(d);
+      out.push({
+        key,
+        label: ['S', 'M', 'T', 'W', 'T', 'F', 'S'][d.getDay()],
+        seconds: player?.timeByDay?.[key] || 0,
+        quests: history.filter((h) => h.day === key).length
+      });
+    }
+    return out;
+  }, [player, history]);
+
+  const summary = useMemo(() => {
+    const weekKeys = new Set(week.map((d) => d.key));
+    const weekEntries = history.filter((h) => weekKeys.has(h.day));
+    const scored = weekEntries.filter((h) => h.total > 0);
+    const correct = scored.reduce((sum, h) => sum + h.correct, 0);
+    const asked = scored.reduce((sum, h) => sum + h.total, 0);
+    return {
+      seconds: week.reduce((sum, d) => sum + d.seconds, 0),
+      quests: weekEntries.length,
+      accuracy: asked ? Math.round((correct / asked) * 100) : null,
+      activeDays: week.filter((d) => d.seconds > 0 || d.quests > 0).length,
+      answered: asked
+    };
+  }, [week, history]);
+
+  // The phonics ladder, read straight from the Word Forest curriculum.
+  const phonics = useMemo(() => {
+    const forest = kingdoms.find((k) => k.id === 'word');
+    if (!forest) return [];
+    return forest.sections.map((section, index) => {
+      const stat = skills[section.title];
+      const percent = stat && stat.questions ? Math.round((stat.correct / stat.questions) * 100) : null;
+      return { stage: index + 1, title: section.title, emoji: section.emoji, percent, attempts: stat?.attempts || 0 };
+    });
+  }, [kingdoms, skills]);
+
+  const nextUp = useMemo(() => {
+    const weak = phonics.filter((p) => p.percent !== null && p.percent < 85).sort((a, b) => a.percent - b.percent)[0];
+    if (weak) return { title: weak.title, reason: `${weak.percent}% correct so far — worth another pass.` };
+    const fresh = phonics.find((p) => p.percent === null);
+    if (fresh) return { title: fresh.title, reason: `Stage ${fresh.stage} of ${phonics.length} — not started yet.` };
+    return null;
+  }, [phonics]);
+
+  const byKingdom = useMemo(() => {
+    const map = new Map();
+    history.forEach((h) => {
+      if (!h.kingdomName) return;
+      const row = map.get(h.kingdomName) || { name: h.kingdomName, color: h.color, sessions: 0, correct: 0, total: 0 };
+      row.sessions += 1;
+      if (h.total) { row.correct += h.correct; row.total += h.total; }
+      map.set(h.kingdomName, row);
+    });
+    return [...map.values()].sort((a, b) => b.sessions - a.sessions);
+  }, [history]);
+
+  const timeSplit = useMemo(() => {
+    const entries = Object.entries(player?.timeByActivity || {}).filter(([, s]) => s > 0).sort((a, b) => b[1] - a[1]);
+    const total = entries.reduce((sum, [, s]) => sum + s, 0);
+    return { entries, total };
+  }, [player]);
+
+  const hasData = history.length > 0 || summary.seconds > 0;
+  const maxSeconds = Math.max(...week.map((d) => d.seconds), 1);
+
+  return (
+    <div className="screen active" style={{ position: 'absolute', inset: 0, background: '#F7F8FB', overflowY: 'auto', padding: '0 0 40px' }}>
+
+      {/* Header */}
+      <div style={{ position: 'sticky', top: 0, zIndex: 10, background: 'rgba(247,248,251,0.92)', backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)', padding: '20px 20px 14px', borderBottom: `1px solid ${P_LINE}`, display: 'flex', alignItems: 'center', gap: '14px' }}>
+        <button onClick={onBack} style={{ background: '#fff', border: `1px solid ${P_LINE}`, borderRadius: '14px', width: '42px', height: '42px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: P_INK, flexShrink: 0 }} type="button">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="19" y1="12" x2="5" y2="12" /><polyline points="12 19 5 12 12 5" /></svg>
+        </button>
+        <div style={{ minWidth: 0 }}>
+          <div style={{ fontSize: '11px', fontWeight: 800, color: P_MUTED, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Progress Report</div>
+          <div style={{ fontSize: '19px', fontWeight: 900, color: P_INK, letterSpacing: '-0.02em', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{player?.name || 'Explorer'}</div>
+        </div>
+      </div>
+
+      <div style={{ padding: '18px 20px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+
+        {!hasData && (
+          <div style={{ ...P_CARD, textAlign: 'center', padding: '32px 22px' }}>
+            <div style={{ fontSize: '36px', marginBottom: '12px' }}>📖</div>
+            <h2 style={{ fontSize: '18px', fontWeight: 900, color: P_INK, margin: '0 0 8px' }}>No activity recorded yet</h2>
+            <p style={{ fontSize: '14px', color: P_MUTED, margin: 0, lineHeight: 1.6, fontWeight: 500 }}>
+              Once {player?.name || 'your child'} finishes their first quest, this page will show time spent,
+              accuracy on every phonics stage, and what to practise next. We only report what we've measured —
+              nothing here is estimated.
+            </p>
+          </div>
+        )}
+
+        {hasData && (
+          <>
+            {/* This week at a glance */}
+            <div>
+              <SectionLabel>This week</SectionLabel>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                <StatTile value={formatMinutes(summary.seconds)} label="Time learning" />
+                <StatTile value={summary.quests} label={summary.quests === 1 ? 'Quest finished' : 'Quests finished'} />
+                <StatTile
+                  value={summary.accuracy === null ? '—' : `${summary.accuracy}%`}
+                  label="Answers correct"
+                  hint={summary.accuracy === null ? 'No quizzes yet' : `${summary.answered} questions`}
+                />
+                <StatTile value={`${summary.activeDays}/7`} label="Days active" hint={`${player?.streakDays || 1}-day streak`} />
+              </div>
+            </div>
+
+            {/* Daily activity */}
+            <div style={P_CARD}>
+              <div style={{ fontSize: '14px', fontWeight: 900, color: P_INK, marginBottom: '2px' }}>Daily activity</div>
+              <div style={{ fontSize: '12px', fontWeight: 600, color: P_MUTED, marginBottom: '16px' }}>Minutes of active learning</div>
+              <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: '6px', height: '96px' }}>
+                {week.map((day, i) => {
+                  const minutes = Math.round(day.seconds / 60);
+                  const height = day.seconds > 0 ? Math.max(6, (day.seconds / maxSeconds) * 76) : 3;
+                  const isToday = i === week.length - 1;
+                  return (
+                    <div key={day.key} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }}>
+                      <div style={{ fontSize: '10px', fontWeight: 800, color: day.seconds > 0 ? P_ACCENT : 'transparent', height: '12px' }}>{minutes || ''}</div>
+                      <div style={{ width: '100%', maxWidth: '26px', height: `${height}px`, borderRadius: '6px', background: day.seconds > 0 ? (isToday ? P_ACCENT : 'rgba(108,74,182,0.42)') : 'rgba(46,33,64,0.08)', transition: 'height 0.3s' }} />
+                      <div style={{ fontSize: '11px', fontWeight: 800, color: isToday ? P_INK : P_MUTED }}>{day.label}</div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Phonics ladder — the core of the report */}
+            <div style={P_CARD}>
+              <div style={{ fontSize: '14px', fontWeight: 900, color: P_INK, marginBottom: '2px' }}>Reading &amp; phonics</div>
+              <div style={{ fontSize: '12px', fontWeight: 600, color: P_MUTED, marginBottom: '16px' }}>
+                {phonics.length}-stage progression · {phonics.filter((p) => p.percent !== null).length} started
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                {phonics.map((stage) => {
+                  const started = stage.percent !== null;
+                  const band = started ? bandFor(stage.percent) : null;
+                  return (
+                    <div key={stage.title}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '5px' }}>
+                        <span style={{ fontSize: '11px', fontWeight: 800, color: P_MUTED, width: '16px', flexShrink: 0 }}>{stage.stage}</span>
+                        <span style={{ fontSize: '13px', fontWeight: 700, color: started ? P_INK : '#A3A8B8', flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{stage.title}</span>
+                        {started ? (
+                          <span style={{ fontSize: '10px', fontWeight: 900, color: band.color, background: band.bg, padding: '3px 8px', borderRadius: '999px', flexShrink: 0 }}>{stage.percent}%</span>
+                        ) : (
+                          <span style={{ fontSize: '10px', fontWeight: 800, color: '#A3A8B8', flexShrink: 0 }}>Not started</span>
+                        )}
+                      </div>
+                      <div style={{ marginLeft: '24px', height: '6px', borderRadius: '999px', background: 'rgba(46,33,64,0.06)', overflow: 'hidden' }}>
+                        <div style={{ width: `${started ? stage.percent : 0}%`, height: '100%', borderRadius: '999px', background: started ? band.color : 'transparent', transition: 'width 0.4s' }} />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+              <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', marginTop: '14px', paddingTop: '12px', borderTop: `1px solid ${P_LINE}` }}>
+                {MASTERY_BANDS.map((b) => (
+                  <span key={b.label} style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '11px', fontWeight: 700, color: P_MUTED }}>
+                    <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: b.color }} />{b.label}
+                  </span>
+                ))}
+              </div>
+            </div>
+
+            {/* Recommendation */}
+            {nextUp && (
+              <div style={{ ...P_CARD, background: 'linear-gradient(135deg, rgba(108,74,182,0.06), rgba(108,74,182,0.02))', borderColor: 'rgba(108,74,182,0.18)' }}>
+                <div style={{ fontSize: '11px', fontWeight: 800, color: P_ACCENT, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '6px' }}>Practise next</div>
+                <div style={{ fontSize: '17px', fontWeight: 900, color: P_INK, marginBottom: '4px' }}>{nextUp.title}</div>
+                <div style={{ fontSize: '13px', fontWeight: 500, color: P_MUTED, lineHeight: 1.5 }}>{nextUp.reason}</div>
+              </div>
+            )}
+
+            {/* Where the time went */}
+            {timeSplit.total > 0 && (
+              <div style={P_CARD}>
+                <div style={{ fontSize: '14px', fontWeight: 900, color: P_INK, marginBottom: '14px' }}>Where the time went</div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  {timeSplit.entries.map(([label, seconds]) => (
+                    <div key={label} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <span style={{ fontSize: '13px', fontWeight: 700, color: P_INK, width: '38%', flexShrink: 0 }}>{label}</span>
+                      <div style={{ flex: 1, height: '8px', borderRadius: '999px', background: 'rgba(46,33,64,0.06)', overflow: 'hidden' }}>
+                        <div style={{ width: `${(seconds / timeSplit.total) * 100}%`, height: '100%', background: P_ACCENT, borderRadius: '999px' }} />
+                      </div>
+                      <span style={{ fontSize: '12px', fontWeight: 800, color: P_MUTED, width: '46px', textAlign: 'right', flexShrink: 0 }}>{formatMinutes(seconds)}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Kingdom breakdown */}
+            {byKingdom.length > 0 && (
+              <div style={P_CARD}>
+                <div style={{ fontSize: '14px', fontWeight: 900, color: P_INK, marginBottom: '14px' }}>By kingdom</div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  {byKingdom.map((row) => (
+                    <div key={row.name} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <span style={{ width: '10px', height: '10px', borderRadius: '3px', background: row.color, flexShrink: 0 }} />
+                      <span style={{ fontSize: '13px', fontWeight: 700, color: P_INK, flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{row.name}</span>
+                      <span style={{ fontSize: '12px', fontWeight: 600, color: P_MUTED, flexShrink: 0 }}>
+                        {row.sessions} {row.sessions === 1 ? 'session' : 'sessions'}
+                        {row.total > 0 && ` · ${Math.round((row.correct / row.total) * 100)}%`}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Recent sessions */}
+            {history.length > 0 && (
+              <div style={P_CARD}>
+                <div style={{ fontSize: '14px', fontWeight: 900, color: P_INK, marginBottom: '14px' }}>Recent sessions</div>
+                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                  {history.slice(0, 8).map((entry, i) => (
+                    <div key={entry.ts + '-' + i} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 0', borderTop: i === 0 ? 'none' : `1px solid ${P_LINE}` }}>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: '13px', fontWeight: 800, color: P_INK, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{entry.skill || entry.kingdomName || 'Activity'}</div>
+                        <div style={{ fontSize: '11px', fontWeight: 600, color: P_MUTED, marginTop: '2px' }}>
+                          {entry.kingdomName || '—'} · {new Date(entry.ts).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                        </div>
+                      </div>
+                      {entry.total > 0 ? (
+                        <span style={{ fontSize: '12px', fontWeight: 900, color: bandFor(Math.round((entry.correct / entry.total) * 100)).color, flexShrink: 0 }}>
+                          {entry.correct}/{entry.total}
+                        </span>
+                      ) : (
+                        <span style={{ fontSize: '11px', fontWeight: 800, color: P_MUTED, flexShrink: 0 }}>Completed</span>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </>
+        )}
+
+        <p style={{ fontSize: '11px', color: '#9AA0AE', textAlign: 'center', lineHeight: 1.6, margin: '4px 12px 0', fontWeight: 500 }}>
+          All progress data stays on this device. Accuracy is measured across every question answered,
+          not just the most recent attempt.
+        </p>
+      </div>
+    </div>
+  );
+}
+
+function SectionLabel({ children }) {
+  return <div style={{ fontSize: '11px', fontWeight: 800, color: P_MUTED, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '10px' }}>{children}</div>;
+}
+
+function StatTile({ value, label, hint }) {
+  return (
+    <div style={{ ...P_CARD, padding: '14px 16px' }}>
+      <div style={{ fontSize: '24px', fontWeight: 900, color: P_INK, letterSpacing: '-0.02em', lineHeight: 1.1 }}>{value}</div>
+      <div style={{ fontSize: '12px', fontWeight: 700, color: P_MUTED, marginTop: '4px' }}>{label}</div>
+      {hint && <div style={{ fontSize: '11px', fontWeight: 600, color: '#A3A8B8', marginTop: '2px' }}>{hint}</div>}
     </div>
   );
 }

@@ -17,6 +17,7 @@ object Routes {
     const val LESSON = "lesson"
     const val PET = "pet"
     const val REWARDS = "rewards"
+    const val PARENTS = "parents"
 }
 
 @Composable
@@ -49,7 +50,8 @@ fun WonderNavHost() {
                     navController.navigate(Routes.KINGDOM_DETAIL)
                 },
                 onOpenPet = { navController.navigate(Routes.PET) },
-                onOpenRewards = { navController.navigate(Routes.REWARDS) }
+                onOpenRewards = { navController.navigate(Routes.REWARDS) },
+                onOpenParents = { navController.navigate(Routes.PARENTS) }
             )
         }
         composable(Routes.KINGDOM_DETAIL) {
@@ -69,6 +71,9 @@ fun WonderNavHost() {
         }
         composable(Routes.REWARDS) {
             RewardsScreen(onBack = { navController.popBackStack() })
+        }
+        composable(Routes.PARENTS) {
+            ParentDashboardScreen(onBack = { navController.popBackStack() })
         }
     }
 }

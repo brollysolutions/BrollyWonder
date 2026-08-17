@@ -20,9 +20,12 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.wonderverse.academy.data.HEARTBEAT_SECONDS
 import com.wonderverse.academy.data.JourneyState
+import com.wonderverse.academy.data.LearningLog
 import com.wonderverse.academy.data.PlayerState
 import com.wonderverse.academy.data.journeyForKingdom
+import kotlinx.coroutines.delay
 import com.wonderverse.academy.ui.components.XpBar
 import com.wonderverse.academy.ui.theme.CreamBg
 import com.wonderverse.academy.ui.theme.InkText
@@ -32,6 +35,16 @@ import java.util.Locale
 @Composable
 fun LessonScreen(onBack: () -> Unit, onFinish: () -> Unit) {
     val tts = rememberPronunciationTts()
+    val context = LocalContext.current
+
+    // Time-on-task heartbeat: only ticks while this screen is composed, so
+    // reported minutes reflect actual learning, not an app left open.
+    LaunchedEffect(Unit) {
+        while (true) {
+            delay(HEARTBEAT_SECONDS * 1000L)
+            LearningLog.addTimeOnTask(context, "Quests")
+        }
+    }
 
     var questionIndex by remember { mutableIntStateOf(0) }
     var selectedOption by remember { mutableStateOf<Int?>(null) }
@@ -167,6 +180,14 @@ fun LessonScreen(onBack: () -> Unit, onFinish: () -> Unit) {
                                     selectedOption = null
                                     showResult = false
                                 } else {
+                                    LearningLog.recordActivity(
+                                        context = context,
+                                        type = "quest",
+                                        kingdomId = kingdom.kingdomId,
+                                        skill = section.label,
+                                        correct = correctCount,
+                                        total = card.questions.size
+                                    )
                                     val isWin = correctCount >= Math.ceil(card.questions.size / 2.0).toInt()
                                     if (isWin) {
                                         val coinsEarned = 20 + correctCount * 5
@@ -174,7 +195,8 @@ fun LessonScreen(onBack: () -> Unit, onFinish: () -> Unit) {
                                         PlayerState.addRewards(
                                             coinsEarned = coinsEarned,
                                             xpEarned = xpEarned,
-                                            starsEarned = correctCount
+                                            starsEarned = correctCount,
+                                            context = context
                                         )
                                         showRewardPopup = true
                                     } else {

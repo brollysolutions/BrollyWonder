@@ -23,6 +23,7 @@ object DataStoreManager {
     private val PET_HAPPINESS_KEY = intPreferencesKey("pet_happiness")
     private val PET_HUNGER_KEY = intPreferencesKey("pet_hunger")
     private val PET_EMOJI_KEY = stringPreferencesKey("pet_emoji")
+    private val LEARNING_LOG_KEY = stringPreferencesKey("learning_log")
 
     suspend fun savePlayerState(context: Context) {
         context.dataStore.edit { prefs ->
@@ -39,6 +40,7 @@ object DataStoreManager {
             prefs[PET_HAPPINESS_KEY] = PlayerState.petHappiness.value
             prefs[PET_HUNGER_KEY] = PlayerState.petHunger.value
             prefs[PET_EMOJI_KEY] = PlayerState.petEmoji.value
+            prefs[LEARNING_LOG_KEY] = LearningLog.toJson()
         }
     }
 
@@ -50,12 +52,16 @@ object DataStoreManager {
         PlayerState.xp.value = prefs[XP_KEY] ?: 340
         PlayerState.xpToNextLevel.value = prefs[XP_NEXT_KEY] ?: 500
         PlayerState.level.value = prefs[LEVEL_KEY] ?: 4
-        PlayerState.streakDays.value = prefs[STREAK_KEY] ?: 6
+        // Fall back to the value already loaded from SharedPreferences rather than a
+        // fabricated default, so a real streak isn't overwritten on an empty DataStore.
+        PlayerState.streakDays.value = prefs[STREAK_KEY] ?: PlayerState.streakDays.value
         PlayerState.stars.value = prefs[STARS_KEY] ?: 18
         PlayerState.petName.value = prefs[PET_NAME_KEY] ?: "Glimmer"
         PlayerState.petHappiness.value = prefs[PET_HAPPINESS_KEY] ?: 70
         PlayerState.petHunger.value = prefs[PET_HUNGER_KEY] ?: 55
         PlayerState.petEmoji.value = prefs[PET_EMOJI_KEY] ?: "🐉"
+        // Only overwrite the in-memory log when DataStore actually holds one.
+        prefs[LEARNING_LOG_KEY]?.let { LearningLog.fromJson(it) }
         true
     }
 }

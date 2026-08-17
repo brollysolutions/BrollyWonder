@@ -19,6 +19,10 @@ A gamified, adventure-based educational app for **Nursery to 1st Grade** childre
 - **Lesson / Quiz Flow** — 3-question interactive quizzes with instant feedback and animated reward popups (coins, XP, stars)
 - **Virtual Pet** — Egg hatching mechanic tied to learning progress
 - **Treasure Vault** — Collectible items and coin tracking
+- **Parent Dashboard** — Behind a simple multiplication gate: time on task (7-day chart),
+  quests completed, cumulative accuracy, mastery across all 11 phonics stages, per-kingdom
+  breakdown, recent sessions, and a "practise next" recommendation. Reports only measured
+  data — never estimates — and shows an explicit empty state before the first quest.
 
 ### 🎮 Nursery Mini-Games
 
@@ -44,9 +48,12 @@ A gamified, adventure-based educational app for **Nursery to 1st Grade** childre
 
 ### 📱 Android App (Jetpack Compose Scaffold)
 
-- Splash, Avatar, Kingdom Map, Kingdom Detail, Lesson, Pet, and Rewards screens
-- All data mocked in-memory (`data/Models.kt`) — no backend, no network calls
+- Splash, Avatar, Kingdom Map, Kingdom Detail, Lesson, Pet, Rewards, and **Parent Dashboard** screens
+- Curriculum mocked in-memory (`data/Models.kt`, `data/JourneyContent.kt`) — no backend required
 - State (coins, XP, level, pet stats) held in a `PlayerState` singleton
+- Learning telemetry in `data/Telemetry.kt` (`LearningLog`) — per-skill mastery, time on task
+  and daily streaks, persisted as JSON through both SharedPreferences and DataStore.
+  Covered by unit tests in `app/src/test/` (`gradle :app:testDebugUnitTest`).
 
 ## 🚀 Run It
 
@@ -109,10 +116,12 @@ WonderVerseAcademy-AndroidPrototype/
 
 ## 🛣️ Roadmap
 
+- [x] Learning telemetry (time on task, per-skill accuracy, real daily streaks)
+- [x] Parent Dashboard — web **and** native Android
 - [ ] LocalStorage persistence for coins, XP, and lesson progress
 - [ ] Complete all 6 kingdoms with full quiz content
 - [ ] Add AI Tutor (LLM) integration for adaptive learning
 - [ ] TTS/STT for read-aloud lessons and voice answers
-- [ ] Parent Dashboard and Teacher Dashboard
+- [ ] Teacher Dashboard
 - [ ] Migrate web prototype to native Android (Kotlin/Jetpack Compose)
 - [ ] Backend integration (FastAPI/PostgreSQL)

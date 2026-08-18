@@ -1,5 +1,6 @@
 package com.wonderverse.academy.ui.screens
 
+import android.app.Activity
 import android.speech.tts.TextToSpeech
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
@@ -25,6 +26,7 @@ import com.wonderverse.academy.data.JourneyState
 import com.wonderverse.academy.data.LearningLog
 import com.wonderverse.academy.data.PlayerState
 import com.wonderverse.academy.data.journeyForKingdom
+import com.wonderverse.academy.ads.AdManager
 import kotlinx.coroutines.delay
 import com.wonderverse.academy.ui.components.XpBar
 import com.wonderverse.academy.ui.theme.CreamBg
@@ -282,9 +284,6 @@ private fun LessonChip(text: String) {
         )
     }
 }
-
-import android.app.Activity
-import com.wonderverse.academy.ads.AdManager
 
 @Composable
 private fun RewardPopup(title: String, correctCount: Int, total: Int, onContinue: () -> Unit) {

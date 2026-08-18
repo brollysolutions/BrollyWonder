@@ -16,7 +16,7 @@ import java.time.temporal.ChronoUnit
  * Mirrors the web prototype's contract exactly so both platforms report the
  * same numbers: cumulative per-skill accuracy, sampled time on task, and real
  * consecutive-day streaks. Everything is local-only and rides the existing
- * SharedPreferences + DataStore persistence.
+ * SharedPreferences persistence.
  */
 
 const val HISTORY_LIMIT = 60          // keep the log small enough to persist cheaply
@@ -31,7 +31,9 @@ data class ActivityEntry(
     val correct: Int?,                // null when accuracy isn't measured
     val total: Int?
 ) {
-    val isScored: Boolean get() = total != null && total > 0
+    // Both halves must be present: a stored entry with a total but no `correct`
+    // (hand-edited or partially written) would otherwise NPE inside `percent`.
+    val isScored: Boolean get() = correct != null && total != null && total > 0
     val percent: Int? get() = if (isScored) Math.round(correct!! * 100f / total!!) else null
 }
 

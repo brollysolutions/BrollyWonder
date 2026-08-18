@@ -12,10 +12,8 @@ import com.wonderverse.academy.ui.theme.WonderVerseTheme
 
 import androidx.lifecycle.lifecycleScope
 import com.wonderverse.academy.data.ApiClient
-import com.wonderverse.academy.data.DataStoreManager
 import com.wonderverse.academy.data.LearningLog
 import com.wonderverse.academy.data.PlayerState
-import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 
 import com.wonderverse.academy.ads.AdManager
@@ -24,21 +22,15 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         AdManager.initialize(this)
+
+        // SharedPreferences is the single source of truth for player state.
+        // Restore it synchronously before anything can read PlayerState, then
+        // roll the streak so the persisted value is the one being incremented.
         PlayerState.loadFromPreferences(this)
+        LearningLog.applyStreak(this)
 
         lifecycleScope.launch {
-            var streakRolled = false
-            DataStoreManager.getPlayerState(applicationContext).collectLatest {
-                // Roll the streak only after persisted state has been restored,
-                // so the loaded value isn't clobbered by the read-back.
-                if (!streakRolled) {
-                    streakRolled = true
-                    LearningLog.applyStreak(applicationContext)
-                }
-            }
-        }
-        lifecycleScope.launch {
-            ApiClient.fetchPlayerState()
+            ApiClient.fetchPlayerState(applicationContext)
         }
 
         enableEdgeToEdge()

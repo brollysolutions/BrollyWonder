@@ -126,6 +126,21 @@ class TelemetryTest {
     }
 
     @Test
+    fun `an entry with a total but no correct count is unscored rather than crashing`() {
+        // A partially written or hand-edited log can carry `total` without
+        // `correct`; reading `percent` on it used to throw inside the dashboard.
+        LearningLog.fromJson(
+            """{"lastActiveDate":null,"skills":{},"timeByDay":{},"timeByActivity":{},
+               "history":[{"ts":1,"day":"${dayKey()}","type":"quest",
+               "kingdomId":"word_forest","skill":"Digraphs","correct":null,"total":6}]}"""
+        )
+
+        val entry = LearningLog.history.first()
+        assertTrue(!entry.isScored)
+        assertNull(entry.percent)
+    }
+
+    @Test
     fun `malformed or absent stored data loads empty instead of crashing`() {
         LearningLog.recordActivity(null, "quest", "word_forest", "Digraphs", correct = 1, total = 1)
 

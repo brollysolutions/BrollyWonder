@@ -55,6 +55,16 @@ object PlayerState {
 
     val isProfileSet = mutableStateOf(false)
 
+    /** ISO day the daily mystery box was last claimed; empty means never. */
+    val lastMysteryBoxDay = mutableStateOf("")
+
+    /**
+     * When this state was last written locally. Used to decide whether a
+     * remote payload is fresher than what's on the device — without it, a
+     * stale server response silently rolls back offline progress.
+     */
+    val updatedAt = mutableStateOf(0L)
+
     fun loadFromPreferences(context: Context) {
         val prefs = context.getSharedPreferences("wonder_verse_prefs", Context.MODE_PRIVATE)
         isProfileSet.value = prefs.getBoolean("is_profile_set", false)
@@ -70,11 +80,19 @@ object PlayerState {
         petHappiness.value = prefs.getInt("pet_happiness", 70)
         petHunger.value = prefs.getInt("pet_hunger", 55)
         petEmoji.value = prefs.getString("pet_emoji", "🐉") ?: "🐉"
+        lastMysteryBoxDay.value = prefs.getString("mystery_box_day", "") ?: ""
+        updatedAt.value = prefs.getLong("updated_at", 0L)
         // Saves that predate telemetry simply load an empty log — no history is invented.
         LearningLog.fromJson(prefs.getString("learning_log", null))
     }
 
-    fun saveToPreferences(context: Context) {
+    /**
+     * @param touch stamp [updatedAt] with the current time. Pass false when
+     *   persisting state that came *from* the server, so its own timestamp
+     *   survives and the next fetch compares against the right value.
+     */
+    fun saveToPreferences(context: Context, touch: Boolean = true) {
+        if (touch) updatedAt.value = System.currentTimeMillis()
         val prefs = context.getSharedPreferences("wonder_verse_prefs", Context.MODE_PRIVATE)
         prefs.edit()
             .putBoolean("is_profile_set", isProfileSet.value)
@@ -90,6 +108,8 @@ object PlayerState {
             .putInt("pet_happiness", petHappiness.value)
             .putInt("pet_hunger", petHunger.value)
             .putString("pet_emoji", petEmoji.value)
+            .putString("mystery_box_day", lastMysteryBoxDay.value)
+            .putLong("updated_at", updatedAt.value)
             .putString("learning_log", LearningLog.toJson())
             .apply()
     }

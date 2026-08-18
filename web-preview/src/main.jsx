@@ -7546,6 +7546,12 @@ function MathDefenderGame({ player, onBack, onComplete, onEarn, onLoss }) {
     return () => clearInterval(interval);
   }, [gameState, level]);
 
+  // Read the selection through a ref so it can be used inside the spawn timer
+  // without becoming a dependency — depending on it restarted the interval on
+  // every kill, so the spawner never reached its delay for an active player.
+  const selectedEnemyIdRef = useRef(selectedEnemyId);
+  useEffect(() => { selectedEnemyIdRef.current = selectedEnemyId; }, [selectedEnemyId]);
+
   // Periodic monster spawner for horde feel at higher levels
   useEffect(() => {
     if (gameState !== 'playing') return;
@@ -7555,7 +7561,7 @@ function MathDefenderGame({ player, onBack, onComplete, onEarn, onLoss }) {
       setEnemies(prev => {
         if (prev.length < maxMonsters) {
           const newMonster = spawnMonster(level);
-          if (!selectedEnemyId) setSelectedEnemyId(newMonster.id);
+          if (!selectedEnemyIdRef.current) setSelectedEnemyId(newMonster.id);
           return [...prev, newMonster];
         }
         return prev;
@@ -7563,7 +7569,7 @@ function MathDefenderGame({ player, onBack, onComplete, onEarn, onLoss }) {
     }, Math.max(3000, 7000 - level * 400));
 
     return () => clearInterval(spawnTimer);
-  }, [gameState, level, selectedEnemyId]);
+  }, [gameState, level]);
 
   // Target active enemy (lowest enemy on screen)
   const targetEnemy = enemies.find(e => e.id === selectedEnemyId) || enemies[0];
@@ -8515,14 +8521,17 @@ function AsteroidBlasterGame({ player, onBack, onComplete, onLoss }) {
     };
   }, [energy, status]);
 
-  // Triple shot timer countdown
+  // Triple shot timer countdown. Depend on whether the power-up is active, not
+  // on its remaining value — the latter tore down and rebuilt the interval on
+  // every tick, so the countdown drifted longer than its advertised duration.
+  const tripleShotActive = tripleShotTimer > 0;
   React.useEffect(() => {
-    if (tripleShotTimer <= 0) return;
+    if (!tripleShotActive) return;
     const interval = setInterval(() => {
       setTripleShotTimer(t => Math.max(0, t - 1000));
     }, 1000);
     return () => clearInterval(interval);
-  }, [tripleShotTimer]);
+  }, [tripleShotActive]);
 
   // Overcharge Mega Plasma Beam trigger
   const triggerSuperBeam = () => {

@@ -2,3 +2,9 @@ node_modules/
 dist/
 .env
 .DS_Store
+
+# Android / Gradle build output
+.gradle/
+build/
+local.properties
+*.apk

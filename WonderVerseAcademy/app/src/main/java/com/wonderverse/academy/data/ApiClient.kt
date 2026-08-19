@@ -1,5 +1,6 @@
 package com.wonderverse.academy.data
 
+import android.content.Context
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.json.JSONObject
@@ -10,7 +11,12 @@ object ApiClient {
     // 10.0.2.2 is standard Android Emulator localhost loopback to host dev machine port 3000
     private const val BASE_URL = "http://10.0.2.2:3000/api/player"
 
-    suspend fun fetchPlayerState(): Boolean = withContext(Dispatchers.IO) {
+    /**
+     * Pull remote state, but only adopt it when it is genuinely newer than the
+     * local save. The device is authoritative otherwise: a child who played
+     * offline must not lose that progress to a stale server record.
+     */
+    suspend fun fetchPlayerState(context: Context): Boolean = withContext(Dispatchers.IO) {
         try {
             val url = URL(BASE_URL)
             val conn = url.openConnection() as HttpURLConnection
@@ -23,6 +29,11 @@ object ApiClient {
                 val root = JSONObject(jsonStr)
                 val p = root.optJSONObject("player")
                 if (p != null) {
+                    val remoteUpdatedAt = p.optLong("updatedAt", 0L)
+                    if (remoteUpdatedAt <= PlayerState.updatedAt.value) {
+                        // Local save is same-age or newer — keep the device's version.
+                        return@withContext false
+                    }
                     withContext(Dispatchers.Main) {
                         PlayerState.name.value = p.optString("name", PlayerState.name.value)
                         PlayerState.avatarEmoji.value = p.optString("avatarEmoji", PlayerState.avatarEmoji.value)
@@ -36,6 +47,10 @@ object ApiClient {
                         PlayerState.petHappiness.value = p.optInt("petHappiness", PlayerState.petHappiness.value)
                         PlayerState.petHunger.value = p.optInt("petHunger", PlayerState.petHunger.value)
                         PlayerState.petEmoji.value = p.optString("petEmoji", PlayerState.petEmoji.value)
+                        // Carry the server's timestamp rather than stamping "now",
+                        // so the next fetch compares against the right generation.
+                        PlayerState.updatedAt.value = remoteUpdatedAt
+                        PlayerState.saveToPreferences(context, touch = false)
                     }
                     return@withContext true
                 }
@@ -69,6 +84,7 @@ object ApiClient {
                 put("petHappiness", PlayerState.petHappiness.value)
                 put("petHunger", PlayerState.petHunger.value)
                 put("petEmoji", PlayerState.petEmoji.value)
+                put("updatedAt", PlayerState.updatedAt.value)
             }
             val bodyObj = JSONObject().put("player", playerObj)
 

@@ -24,6 +24,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.wonderverse.academy.data.Badge
 import com.wonderverse.academy.data.PlayerState
+import com.wonderverse.academy.data.dayKey
 import com.wonderverse.academy.data.demoBadges
 import com.wonderverse.academy.ui.theme.CreamBg
 import com.wonderverse.academy.ui.theme.InkText
@@ -37,9 +38,13 @@ import com.wonderverse.academy.ui.components.AdBanner
 
 @Composable
 fun RewardsScreen(onBack: () -> Unit) {
-    var boxOpened by remember { mutableStateOf(false) }
     var adBonusMessage by remember { mutableStateOf<String?>(null) }
     val context = LocalContext.current
+
+    // Derived from persisted state, not `remember`, so the box stays claimed
+    // across navigation and relaunches — and re-arms tomorrow, as advertised.
+    val today = dayKey()
+    val boxOpened = PlayerState.lastMysteryBoxDay.value == today
 
     Column(modifier = Modifier.fillMaxSize().background(CreamBg)) {
         Row(
@@ -98,12 +103,19 @@ fun RewardsScreen(onBack: () -> Unit) {
                         val activity = context as? Activity
                         if (activity != null) {
                             AdManager.showRewardedAd(activity) { amount ->
-                                PlayerState.coins.value += amount
+                                // Route through addRewards so the coins are persisted;
+                                // a bare `coins.value +=` is lost on next launch.
+                                PlayerState.addRewards(
+                                    coinsEarned = amount,
+                                    xpEarned = 0,
+                                    starsEarned = 0,
+                                    context = context
+                                )
                                 adBonusMessage = "🎉 Claimed +$amount Coins!"
                             }
                         } else {
-                            PlayerState.coins.value += 50
-                            adBonusMessage = "🎉 Claimed +50 Coins!"
+                            // No Activity means no ad can be shown — never pay out for that.
+                            adBonusMessage = "Couldn't load the video right now. Try again soon!"
                         }
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF0284C7))
@@ -121,14 +133,22 @@ fun RewardsScreen(onBack: () -> Unit) {
                 .fillMaxWidth()
                 .padding(horizontal = 20.dp)
                 .background(Color.White, RoundedCornerShape(18.dp))
-                .clickable(enabled = !boxOpened) { boxOpened = true }
+                .clickable(enabled = !boxOpened) {
+                    PlayerState.lastMysteryBoxDay.value = today
+                    PlayerState.addRewards(
+                        coinsEarned = 15,
+                        xpEarned = 0,
+                        starsEarned = 1,
+                        context = context
+                    )
+                }
                 .padding(20.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(if (boxOpened) "🎁✨" else "📦", fontSize = 40.sp)
             Spacer(Modifier.height(6.dp))
             Text(
-                if (boxOpened) "You found 15 coins and a Star Cape costume!" else "Daily Mystery Box — tap to open!",
+                if (boxOpened) "You found 15 coins and a star! Come back tomorrow." else "Daily Mystery Box — tap to open!",
                 fontWeight = FontWeight.SemiBold,
                 color = InkText,
                 fontSize = 13.sp

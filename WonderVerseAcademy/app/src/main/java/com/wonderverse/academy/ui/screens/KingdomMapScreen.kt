@@ -29,7 +29,8 @@ import com.wonderverse.academy.ui.theme.InkText
 fun KingdomMapScreen(
     onOpenKingdom: (String) -> Unit,
     onOpenPet: () -> Unit,
-    onOpenRewards: () -> Unit
+    onOpenRewards: () -> Unit,
+    onOpenParents: () -> Unit
 ) {
     Column(modifier = Modifier.fillMaxSize().background(CreamBg)) {
         TopStatusBar()
@@ -41,9 +42,23 @@ fun KingdomMapScreen(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Column {
+            Column(modifier = Modifier.weight(1f)) {
                 Text("Hi ${PlayerState.avatarEmoji.value} ${PlayerState.name.value}!", style = MaterialTheme.typography.titleLarge, color = InkText)
                 Text("Which kingdom will you explore today?", color = InkText.copy(alpha = 0.6f), fontSize = 13.sp)
+            }
+            // Deliberately quiet so it doesn't compete for a child's attention.
+            Surface(
+                color = Color.White,
+                shape = RoundedCornerShape(999.dp),
+                onClick = onOpenParents
+            ) {
+                Text(
+                    "🔔 For Parents",
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = InkText.copy(alpha = 0.55f),
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)
+                )
             }
         }
 

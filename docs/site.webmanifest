@@ -1,0 +1,19 @@
+{
+  "name": "Brolly Wonder",
+  "short_name": "Brolly Wonder",
+  "icons": [
+    {
+      "src": "icons/icon.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    },
+    {
+      "src": "icons/icon-180.png",
+      "sizes": "180x180",
+      "type": "image/png"
+    }
+  ],
+  "theme_color": "#5b4bdb",
+  "background_color": "#f4f6ff",
+  "display": "standalone"
+}

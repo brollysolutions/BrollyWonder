@@ -47,7 +47,7 @@ fun SplashScreen(onFinished: () -> Unit) {
             )
             Spacer(Modifier.height(16.dp))
             Text(
-                text = "WonderVerse Academy",
+                text = "Brolly Wonder",
                 color = Color.White,
                 fontWeight = FontWeight.ExtraBold,
                 fontSize = 26.sp,

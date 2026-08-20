@@ -13,5 +13,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "WonderVerse Academy"
+rootProject.name = "Brolly Wonder"
 include(":app")

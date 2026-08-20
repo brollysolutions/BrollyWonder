@@ -1,18 +1,31 @@
+import java.io.FileInputStream
+import java.util.Properties
+
+// Release signing credentials live outside version control (see keystore.properties.sample).
+// When the file is absent the release signingConfig is left empty so debug builds and CI
+// still configure; `bundleRelease` then emits an unsigned bundle that Play will reject.
+val keystorePropertiesFile = rootProject.file("keystore.properties")
+val keystoreProperties = Properties().apply {
+    if (keystorePropertiesFile.exists()) {
+        FileInputStream(keystorePropertiesFile).use { load(it) }
+    }
+}
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
 }
 
 android {
-    namespace = "com.wonderverse.academy"
-    compileSdk = 34
+    namespace = "com.brolly.wonder"
+    compileSdk = 36
 
     defaultConfig {
-        applicationId = "com.wonderverse.academy"
+        applicationId = "com.brolly.wonder"
         minSdk = 26
-        targetSdk = 34
+        targetSdk = 36
         versionCode = 1
-        versionName = "0.1-prototype"
+        versionName = "1.0.0"
     }
 
     buildFeatures {
@@ -32,9 +45,21 @@ android {
         jvmTarget = "17"
     }
 
+    signingConfigs {
+        create("release") {
+            if (keystorePropertiesFile.exists()) {
+                storeFile = file(keystoreProperties.getProperty("storeFile"))
+                storePassword = keystoreProperties.getProperty("storePassword")
+                keyAlias = keystoreProperties.getProperty("keyAlias")
+                keyPassword = keystoreProperties.getProperty("keyPassword")
+            }
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = false
+            signingConfig = signingConfigs.getByName("release")
         }
     }
 }

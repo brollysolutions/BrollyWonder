@@ -8,3 +8,9 @@ dist/
 build/
 local.properties
 *.apk
+
+# Release signing -- never commit these
+*.jks
+*.keystore
+keystore.properties
+*.aab
